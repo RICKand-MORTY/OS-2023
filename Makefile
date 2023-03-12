@@ -1,5 +1,5 @@
 GNU := riscv64-unknown-elf
-COPS = -g -O0 -Wall -nostdlib  -Iinclude -mcmodel=medany -fno-PIE -fomit-frame-pointer -Wno-builtin-declaration-mismatch -ggdb -g
+COPS = -g -O0 -Wall -nostdlib -march=rv64imac -mabi=lp64 -Iinclude -mcmodel=medany -fno-PIE -fomit-frame-pointer -Wno-builtin-declaration-mismatch -ggdb -g
 BUILD_ROOT= build
 BUILD_DIR = $(BUILD_ROOT)/os
 SRC_DIR = kernel
@@ -16,7 +16,7 @@ $(BUILD_EXP_DIR)/%_c.o: $(SRC_EXP_DIR)/%.c
 	mkdir -p $(BUILD_EXP_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
-	mkdir -p $(BUILD_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
+	mkdir -p $(BUILD_DIR); echo " CC   $@" ; $(GNU)-gcc  -L./lib -lsbi $(COPS) -c $< -o $@
 
 $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
 	mkdir -p $(BUILD_DIR); echo " AS   $@"; $(GNU)-gcc $(COPS) -c $< -o $@
@@ -34,14 +34,18 @@ OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 OBJ_FILES += $(LIB_FILES:$(LIB_DIR)/%.c=$(BUILD_LIB_DIR)/%_c.o)
 OBJ_FILES += $(SRC_EXP_FILES:$(SRC_EXP_DIR)/%.c=$(BUILD_EXP_DIR)/%_c.o)
 
-benos.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES)
-	$(GNU)-ld -z muldefs -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/os.elf  $(OBJ_FILES) -Map os.map; echo " LD $(BUILD_DIR)/os.elf"
+benos.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
+	$(GNU)-ld -z muldefs -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/os.elf  $(OBJ_FILES) $(LIB_DIR)/*.a -Map os.map; echo " LD $(BUILD_DIR)/os.elf"
 	$(GNU)-objcopy $(BUILD_DIR)/os.elf -O binary os.bin; echo " OBJCOPY os.bin"
 	cp $(BUILD_DIR)/os.elf os.elf
 	
 
 ######################run qemu#########################################
-QEMU_FLAGS  += -nographic -machine virt -m 128M
-QEMU_BIOS = -bios ./bootloader/fw_jump.bin -device loader,file=os.bin,addr=0x80200000 -kernel os.bin  
+QEMU_FLAGS  += -nographic  -machine virt -m 128M	
+QEMU_BIOS = -bios ./bootloader/fw_jump.bin -device loader,file=os.bin,addr=0x80200000 -kernel os.elf  
 run:
 	qemu-system-riscv64 $(QEMU_FLAGS) $(QEMU_BIOS) 
+debug:
+	qemu-system-riscv64 $(QEMU_FLAGS) $(QEMU_BIOS) -gdb tcp::1234 -S 
+	riscv64-unknown-elf-gdb ./os.elf
+	target remote localhost:1234

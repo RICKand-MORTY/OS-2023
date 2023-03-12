@@ -6,6 +6,7 @@ SECTIONS
 	. = ALIGN(8);
 	_text = .;
 	.text : { *(.text) }
+	. = ALIGN(8);
 	_etext = .;
 	.rodata : { *(.rodata) }
 	.data : { *(.data) }

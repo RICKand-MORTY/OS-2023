@@ -31,7 +31,7 @@ static void search_stackframe()
         :"memory"
     );
     pc=(unsigned long)search_stackframe;
-    fp = (unsigned long)__builtin_frame_address(0);
+    fp = (unsigned long)__builtin_frame_address(0);   //built-in function,get fp
     while (1)
     {
         if(kernel_text(pc)==0)

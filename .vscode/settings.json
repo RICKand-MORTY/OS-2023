@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "stdarg.h": "c",
-        "printk.h": "c"
+        "printk.h": "c",
+        "trap.h": "c",
+        "uart.h": "c"
     }
 }
