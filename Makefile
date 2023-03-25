@@ -4,9 +4,9 @@ BUILD_ROOT= build
 BUILD_DIR = $(BUILD_ROOT)/os
 SRC_DIR = kernel
 LIB_DIR = lib
-SRC_EXP_DIR = $(SRC_DIR)/exception
+SRC_EXP_DIR = $(SRC_DIR)/trap
 BUILD_LIB_DIR = $(BUILD_ROOT)/lib
-BUILD_EXP_DIR = $(BUILD_ROOT)/exception
+BUILD_EXP_DIR = $(BUILD_ROOT)/trap
 all : clean benos.bin 
 
 clean :
@@ -16,7 +16,7 @@ $(BUILD_EXP_DIR)/%_c.o: $(SRC_EXP_DIR)/%.c
 	mkdir -p $(BUILD_EXP_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
-	mkdir -p $(BUILD_DIR); echo " CC   $@" ; $(GNU)-gcc  -L./lib -lsbi $(COPS) -c $< -o $@
+	mkdir -p $(BUILD_DIR); echo " CC   $@" ; $(GNU)-gcc   $(COPS) -c $< -o $@
 
 $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
 	mkdir -p $(BUILD_DIR); echo " AS   $@"; $(GNU)-gcc $(COPS) -c $< -o $@
@@ -42,7 +42,9 @@ benos.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
 
 ######################run qemu#########################################
 QEMU_FLAGS  += -nographic  -machine virt -m 128M	
-QEMU_BIOS = -bios ./bootloader/fw_jump.bin -device loader,file=os.bin,addr=0x80200000 -kernel os.elf  
+QEMU_BIOS = -bios default  -kernel os.elf
+QEMU_DEVICES = -device loader,file=os.bin,addr=0x80200000  
+#./bootloader/fw_jump.bin
 run:
 	qemu-system-riscv64 $(QEMU_FLAGS) $(QEMU_BIOS) 
 debug:

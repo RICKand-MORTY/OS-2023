@@ -104,7 +104,7 @@ do_exception_vector:
     kernel_entry
     la ra, ret_from_exception
     mv a0, sp
-    mv a1, s4
+    mv a1, s4	//scause
     tail do_exception
 
 ret_from_exception:

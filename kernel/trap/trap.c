@@ -1,11 +1,15 @@
 #include "../../include/trap.h"
 #include "../../lib/printk.h"
 #include "../../include/pt_offset.h"
+#include "../../include/csr.h"
+#include "../../include/timer.h"
 
-#define is_interrupt_fault(reg) (reg & (1UL << 63))
+#define SCAUSE_INT (1UL << 63)
+#define is_interrupt_fault(reg) (reg & (SCAUSE_INT))
 
 extern void do_exception_vector(void);
 
+unsigned long count_timer=0;
 const char * error_msg[]=
 {
     "Instruction address misaligned",
@@ -37,9 +41,9 @@ void trap_init(void)
 //define error process function
 static void do_trap_error(struct pt_regs *regs, const char *str)
 {
-	printk("Oops - %s\n", str);
+	printk("ERROR HAPPENED! cause:%s\n", str);
 	show_regs(regs);
-	printk("sstatus:0x%016lx  sbadaddr:0x%016lx  scause:0x%016lx\n",
+	printk("sstatus:0x%016lx  (err_address)sbadaddr:0x%016lx  scause:0x%016lx\n",
 			regs->sstatus, regs->sbadaddr, regs->scause);
 	while(1);
 }
@@ -74,15 +78,31 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 {
     int error_index=0;
 	printk("%s, scause:0x%lx\n", __func__, scause);
-
 	if (is_interrupt_fault(scause)) 
     {
-        //do interrupt function
+       switch (scause & ~SCAUSE_INT)
+	   {
+	   case S_INTERRUPT_CAUSE_TIMER:
+			handle_timer();
+			break;
+
+	   default:
+			printk("undefined interrupt!\n");
+			break;
+	   }
 	} 
     else
     {
         error_index = (scause&0xf);
         do_trap_error(regs,error_msg[error_index]);
 	}
+}
+
+void handle_timer(void)
+{
+	csr_clr(sie, SIE_STIE);	//close timer interrupt
+	reset_timer();
+	count_timer++;
+	printk("Timer interrupt! count_timer=%lu\n",count_timer);
 }
 

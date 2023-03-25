@@ -2,6 +2,16 @@
 #define _TRAP_H
 
 
+//CLINT register (unmapped)
+#define CLINT_ADDR	0x2000000
+#define CLINT_TIMER_CMP (CLINT_ADDR + 0x4000)
+#define CLINT_TIMER_VAL (CLINT_ADDR + 0xbff8)
+
+//CLINT interrupt num
+#define S_INTERRUPT_CAUSE_SOFTWARE 1
+#define S_INTERRUPT_CAUSE_TIMER 5
+#define S_INTERRUPT_CAUSE_EXTERNAL 9
+
 /*store registers when exception happened*/
 struct pt_regs {
 	unsigned long sepc;
@@ -42,31 +52,10 @@ struct pt_regs {
 	unsigned long scause;
 };
 
-#define write_csr(csr,val)						\
-({												\
-	__asm__ __volatile__  (						\
-		"csrw "#csr", %0"						\
-		:										\
-		:"rK"((unsigned long)(val))				\
-		:"memory"								\
-	);											\
-})
-
-#define read_csr(csr)							\
-({												\
-	register unsigned long _res;				\
-	__asm__ __volatile__(						\
-		"csrr %0, " #csr						\
-		:"=r"(_res)								\
-		:										\
-		:"memory"								\
-	);											\
-	_res;										\	
-})
 
 void trap_init(void);
 static void do_trap_error(struct pt_regs *regs, const char *str);
 void show_regs(struct pt_regs *regs);
 void do_exception(struct pt_regs *regs, unsigned long scause);
-
+void stack_trace(void);
 #endif

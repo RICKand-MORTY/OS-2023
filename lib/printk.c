@@ -1,7 +1,7 @@
 #include "./printk.h"
-#include "../kernel/urat.c"
+//#include "../kernel/urat.c"
 #include "lib.h"
-
+#include "../include/sbi.h"
 /*
 string to numbers
 */
@@ -267,6 +267,8 @@ int vsprintf(char * buf,const char *fmt, va_list args)
 
 /*
 need rewrite(use 16550 to output)
+
+use sbi interface to output
 */
 int printk(const char *fmt,...)
 {
@@ -275,6 +277,6 @@ int printk(const char *fmt,...)
     va_start(args,fmt);
     num=vsprintf(buf,fmt,args);
     va_end(args);
-    uart_send_string(buf);
+    sbi_putstr(buf);
     return num;
 }

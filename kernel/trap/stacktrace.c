@@ -48,7 +48,7 @@ static void search_stackframe()
         fp=frame->s_fp;
         pc = frame->s_ra-4;
         if (kernel_text(pc))
-			printk("[0x%016lx - 0x%016lx]  pc 0x%016lx\n", sp, fp, pc);
+			printk("[0x%016lx - 0x%016lx]  pc: 0x%016lx\n", sp, fp, pc);
     }
 }
 

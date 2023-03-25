@@ -24,12 +24,27 @@ make debug：启动qemu和gdb调试
 
 /bootloader:开源固件opensbi构建
 
-/include:头文件
+/include:头文件  
+
+    csr.h：与系统寄存器有关宏定义\  
+    io.h:  用于读写\
+    pt_offset.h：保存现场时寄存器在栈中偏移\
+    sbi.h: 用于m模式调用(ecall)\
+    timer.h:与计时器中断有关\
 
 /lib:通用库
 
+    lib.h通用函数库\
+    printk.c和printk.c：打印\
+
 /kernel:内核源文件
 
+    trap:异常和中断处理
+
+	    stacktrace.c:栈回溯\
+	    timer.c:定时器\
+	    trap.c异常处理\
+    
 /kernel/exception:异常处理
 
 
