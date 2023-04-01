@@ -41,8 +41,8 @@ benos.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
 	
 
 ######################run qemu#########################################
-QEMU_FLAGS  += -nographic  -machine virt -m 128M	
-QEMU_BIOS = -bios default  -kernel os.elf
+QEMU_FLAGS  += -nographic  -machine virt  -m 128M -smp 2 
+QEMU_BIOS = -bios default	  -kernel os.elf
 QEMU_DEVICES = -device loader,file=os.bin,addr=0x80200000  
 #./bootloader/fw_jump.bin
 run:

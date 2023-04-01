@@ -26,8 +26,12 @@
 #define UART_LSR_OE	    0x02  /* 数据溢出 */
 #define UART_LSR_DR	    0x01  /* FIFO有数据 */
 
+#define UART0_IRQ_NUM 10
+
 void uart_send(char c);
 void uart_send_string(char *str);
+char uart_get(void);
 void uart_init(void);
+void enable_uart_irq();
 
 #endif  /*_UART_H */

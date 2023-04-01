@@ -8,6 +8,9 @@
         "time.h": "c",
         "sbi.h": "c",
         "csr.h": "c",
-        "timer.h": "c"
+        "timer.h": "c",
+        "io.h": "c",
+        "stdbool.h": "c",
+        "plic.h": "c"
     }
 }

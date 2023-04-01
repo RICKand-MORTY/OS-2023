@@ -3,6 +3,7 @@
 #include "../../include/pt_offset.h"
 #include "../../include/csr.h"
 #include "../../include/timer.h"
+#include "../../include/plic.h"
 
 #define SCAUSE_INT (1UL << 63)
 #define is_interrupt_fault(reg) (reg & (SCAUSE_INT))
@@ -77,18 +78,20 @@ void show_regs(struct pt_regs *regs)
 void do_exception(struct pt_regs *regs, unsigned long scause)
 {
     int error_index=0;
-	printk("%s, scause:0x%lx\n", __func__, scause);
+	//printk("%s, scause:0x%lx\n", __func__, scause);
 	if (is_interrupt_fault(scause)) 
     {
        switch (scause & ~SCAUSE_INT)
 	   {
-	   case S_INTERRUPT_CAUSE_TIMER:
-			handle_timer();
-			break;
-
-	   default:
-			printk("undefined interrupt!\n");
-			break;
+	   		case S_INTERRUPT_CAUSE_TIMER:
+				handle_timer();
+				break;
+			case S_INTERRUPT_CAUSE_EXTERNAL:
+				handle_plic_irq(regs);
+				break;
+	   		default:
+				printk("undefined interrupt!\n");
+				break;
 	   }
 	} 
     else

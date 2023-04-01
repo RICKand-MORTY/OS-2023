@@ -30,7 +30,9 @@ make debug：启动qemu和gdb调试
     io.h:  用于读写\
     pt_offset.h：保存现场时寄存器在栈中偏移\
     sbi.h: 用于m模式调用(ecall)\
-    timer.h:与计时器中断有关\
+    timer.h:与计时器中断有关\  
+    plic.h:  plic初始化和中断处理相关   
+    uart.h:  16550串口控制器相关  
 
 /lib:通用库
 
@@ -41,10 +43,11 @@ make debug：启动qemu和gdb调试
 
     trap:异常和中断处理
 
-	    stacktrace.c:栈回溯\
-	    timer.c:定时器\
-	    trap.c异常处理\
-    
-/kernel/exception:异常处理
+	    stacktrace.c: 栈回溯\
+	    timer.c: 定时器\
+	    trap.c: 异常处理\  
+        plic.c: plic相关  
+         
+    uart.c:  16550串口控制器
 
 
