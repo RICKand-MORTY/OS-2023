@@ -11,6 +11,7 @@
         "timer.h": "c",
         "io.h": "c",
         "stdbool.h": "c",
-        "plic.h": "c"
+        "plic.h": "c",
+        "page_table.h": "c"
     }
 }

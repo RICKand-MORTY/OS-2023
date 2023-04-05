@@ -7,24 +7,44 @@
 #include "../include/io.h"
 #include "../include/plic.h"
 
+#define PGDIR_SHIFT     30
+#define PGDIR_SIZE      (1UL << PGDIR_SHIFT)
+#define PGDIR_MASK      (~(PGDIR_SIZE - 1))
+#define PTRS_PER_PGD	(PAGE_SIZE/ sizeof(pgd_t))
+#define PAGE_SIZE   	(1 << PAGE_SHIFT)
+#define PAGE_SHIFT	 		12
+#define PMD_SHIFT       21
+#define PTRS_PER_PMD    (1<<(PGDIR_SHIFT))
+typedef unsigned long u64;
+typedef u64 pteval_t;
+typedef u64 pmdval_t;
+typedef u64 pudval_t;
+typedef u64 pgdval_t;
+typedef struct {
+	pgdval_t pgd;
+} pgd_t;
+typedef struct {
+	unsigned long pgprot;
+} pgprot_t;
+typedef struct {
+	pmdval_t pmd;
+} pmd_t;
+#define __pgprot(x)	((pgprot_t) { (x) })
+#define PTRS_PER_PMD    (PAGE_SIZE / sizeof(pmd_t))
+
 void kernel_main(void)
 {
 	uart_init();
 	//uart_send_string("Welcome RISC-V!\r\n");
 	trap_init();
 	local_irq_enable;
-	//sbi_putstr("this is sbi print\n");
-	//printk("abcdefg\n%daaa",(1+2));
-	/*__asm__("li a0,0x7000000000000\n"
-			 "ld a0, (a0)"
-			);*/
 	//timer_init;
+	int a = PTRS_PER_PMD;
+	printk("%d pppppppppp",a);
 	plic_init();
 	printk("plic_init finish \n");
 	enable_uart_irq();
-	//writebyte('\r', UART_DAT);
-	//uart_send_string("aaaaaaaaaaaaaa\r\r\r\r\r\r\r");
-	
+	printk("uart irq enable! \n");
 	while (1)
 	{
 		
