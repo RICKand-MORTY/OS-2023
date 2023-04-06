@@ -6,6 +6,9 @@
 #include "../include/csr.h"
 #include "../include/io.h"
 #include "../include/plic.h"
+#include <memory.h>
+
+extern char _bss_begin[], _bss_end[];
 
 #define PGDIR_SHIFT     30
 #define PGDIR_SIZE      (1UL << PGDIR_SHIFT)
@@ -39,12 +42,39 @@ void kernel_main(void)
 	trap_init();
 	local_irq_enable;
 	//timer_init;
-	int a = PTRS_PER_PMD;
-	printk("%d pppppppppp",a);
+	int a = TOTAL_PAGES;
+	printk("%d",a);
 	plic_init();
 	printk("plic_init finish \n");
 	enable_uart_irq();
 	printk("uart irq enable! \n");
+	mem_init((unsigned long)_bss_end, ADDR_END);
+	u64 addr1 = page_alloc();
+	u64 addr = addr1;
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr1 = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	unsigned long addr2 = page_alloc();
+	printk("address:%016lx\n",addr);
+	addr = page_alloc();
+	printk("address:%016lx\n",addr);
+	printk("\n");
+	page_free_addr(addr1);
+	printk("\n%d ", a);
 	while (1)
 	{
 		
