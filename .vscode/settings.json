@@ -13,6 +13,7 @@
         "stdbool.h": "c",
         "plic.h": "c",
         "page_table.h": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "lib.h": "c"
     }
 }

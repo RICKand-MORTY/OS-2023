@@ -36,23 +36,18 @@
 	csrr s1, sstatus
 	sd s1, PT_SSTATUS(sp)
 
-	/*保存sepc*/
 	csrr s2, sepc
 	sd s2, PT_SEPC(sp)
 	
-	/*保存sbadaddr*/
 	csrr s3, sbadaddr
 	sd s3, PT_SBADADDR(sp)
 
-	/*保存scause*/
 	csrr s4, scause
 	sd s4, PT_SCAUSE(sp)
 
-	/*保存ssratch*/
 	csrr s5, sscratch
 	sd s5, PT_TP(sp)
 
-	/*保存SP*/
 	addi s0, sp, PT_SIZE 
 	sd s0, PT_SP(sp)
 .endm
@@ -112,3 +107,13 @@ restore_all:
     kernel_exit
     sret
 
+.global enable_mmu
+enable_mmu:
+la a3, _pgd_page
+srl a3, a3, 12
+lui a1, 1 
+slli a1, a1, 63
+or a3, a3, a1
+sfence.vma
+csrw satp, a3
+ret

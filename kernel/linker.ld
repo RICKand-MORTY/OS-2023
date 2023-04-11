@@ -2,12 +2,14 @@ SECTIONS
 {
 	. = 0x80200000,
 
+	_text_boot = .;
 	.text.boot : { *(.text.boot) }
-	. = ALIGN(8);
+	_etext_boot = .;
 
+	. = ALIGN(8);
 	_text = .;
 	.text : { *(.text) }
-	. = ALIGN(8);
+	. = ALIGN(4096);
 	_etext = .;
 	
 	_rodata = .;
