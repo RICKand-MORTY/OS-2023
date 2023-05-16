@@ -27,7 +27,7 @@
 
 #define sbi_set_timer(time) do {SBI_CALL_1(SBI_SET_TIMER, time);} while(0)
 #define sbi_putchar(s) do {SBI_CALL_1(SBI_CONSOLE_PUTCHAR, s);} while(0)
-
+#define SBI_SHUTDOWN    SBI_CALL_0(0x08)
 static inline void sbi_putstr(char *str)
 {
     int i=0;
