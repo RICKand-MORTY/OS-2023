@@ -13,6 +13,7 @@ all : clean kernel-qemu.bin
 
 clean :
 	rm -rf $(BUILD_ROOT)  *.bin  *.map *.elf
+	rm -rf kernel-qemu
 
 $(BUILD_EXP_DIR)/%_c.o: $(SRC_EXP_DIR)/%.c
 	mkdir -p $(BUILD_EXP_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
