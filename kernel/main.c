@@ -24,14 +24,15 @@ void kernel_main(void)
 	int a = TOTAL_PAGES;
 	printk("Hello.\n");
 	plic_init();
-	printk("plic_init finish \n");
+	//printk("plic_init finish \n");
 	enable_uart_irq();
-	printk("uart irq enable! \n");
+	//printk("uart irq enable! \n");
 	mem_init((unsigned long)_bss_end, ADDR_END);
-	printk("ready to init_mmu!!!!!!!!!!!!\n");
+	//printk("ready to init_mmu!!!!!!!!!!!!\n");
 	mmu_init();
 	//unsigned long c = (*(unsigned long*)(ADDR_END+4096));
 	//printk("%016lx",c);
-	printk("mmu_ok\n");
+	//printk("mmu_ok\n");
+	printk("Hello.\n");
 	while(1);
 }

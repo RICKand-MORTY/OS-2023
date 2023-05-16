@@ -75,7 +75,7 @@ int plic_init()
         writeword(0, PLIC_M_THRESHOLD_REG(CPU_TO_HART(i))); //set priority threshold to 0 of M mode
         for(irq_num = 1; irq_num <= MAX_PLIC_IRQ ; irq_num++)
         {
-            printk("%s\n",__func__);
+            //printk("%s\n",__func__);
             //close all external interrupt
             plic_switch_irq(i, irq_num, 0);
             //set all priority of irq_num to 1

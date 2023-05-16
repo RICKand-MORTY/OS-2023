@@ -140,7 +140,7 @@ void create_pte_mapping(
     u64 flags                  
 )
 {
-    printk("this is create_pte_mapping!!!!!!!!!!!!!!!!!!\n");
+    //printk("this is create_pte_mapping!!!!!!!!!!!!!!!!!!\n");
     pmd_page pmd = *pmd_base;
     pte_page* pte_ptr = NULL;
     pmd_page new_pte = 0;
@@ -149,7 +149,7 @@ void create_pte_mapping(
         new_pte = alloc_pgtable();
         if(new_pte == 1)
         {
-            printk("create_pte_mapping fail! addr = %016lx, pmd_base = %016lx\n", addr, pmd_base);
+            //printk("create_pte_mapping fail! addr = %016lx, pmd_base = %016lx\n", addr, pmd_base);
             return;
         }
         else
@@ -175,5 +175,5 @@ void mmu_init(void)
     create_identity_mapping();
     create_VIRT_UART_mapping();
     enable_mmu();
-    printk("mmu init done!!!!!!!!!!!!!!!!!!\n");
+    //printk("mmu init done!!!!!!!!!!!!!!!!!!\n");
 }
