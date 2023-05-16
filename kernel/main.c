@@ -33,6 +33,8 @@ void kernel_main(void)
 	//unsigned long c = (*(unsigned long*)(ADDR_END+4096));
 	//printk("%016lx",c);
 	//printk("mmu_ok\n");
-	printk("Hello.\n");
-	SBI_SHUTDOWN;
+	sbi_putstr("Hello.\n");
+	printk("test test\n");
+	printk("This is test!\n");
+	while(1);
 }

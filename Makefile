@@ -9,7 +9,7 @@ SRC_MEM_DIR = $(SRC_DIR)/memory
 BUILD_LIB_DIR = $(BUILD_ROOT)/lib
 BUILD_EXP_DIR = $(BUILD_ROOT)/trap
 BUILD_MEM_DIR = $(BUILD_ROOT)/memory
-all : clean kernel-qemu.bin
+all : clean kernel-qemu
 
 clean :
 	rm -rf $(BUILD_ROOT)  *.bin  *.map *.elf
@@ -43,7 +43,7 @@ OBJ_FILES += $(SRC_EXP_FILES:$(SRC_EXP_DIR)/%.c=$(BUILD_EXP_DIR)/%_c.o)
 OBJ_FILES += $(SRC_MEM_FILES:$(SRC_MEM_DIR)/%.c=$(BUILD_MEM_DIR)/%_c.o)
 
 
-kernel-qemu.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
+kernel-qemu: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
 	$(GNU)-ld -z muldefs -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel-qemu.elf  $(OBJ_FILES) $(LIB_DIR)/*.a -Map os.map; echo " LD $(BUILD_DIR)/kernel-qemu.elf"
 	$(GNU)-objcopy $(BUILD_DIR)/kernel-qemu.elf -O binary kernel-qemu; echo " OBJCOPY kernel-qemu"
 	cp $(BUILD_DIR)/kernel-qemu.elf kernel-qemu.elf
