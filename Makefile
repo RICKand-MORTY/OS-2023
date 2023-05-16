@@ -9,7 +9,7 @@ SRC_MEM_DIR = $(SRC_DIR)/memory
 BUILD_LIB_DIR = $(BUILD_ROOT)/lib
 BUILD_EXP_DIR = $(BUILD_ROOT)/trap
 BUILD_MEM_DIR = $(BUILD_ROOT)/memory
-all : clean benos.bin 
+all : clean kernel-qemu.bin
 
 clean :
 	rm -rf $(BUILD_ROOT)  *.bin  *.map *.elf
@@ -42,20 +42,20 @@ OBJ_FILES += $(SRC_EXP_FILES:$(SRC_EXP_DIR)/%.c=$(BUILD_EXP_DIR)/%_c.o)
 OBJ_FILES += $(SRC_MEM_FILES:$(SRC_MEM_DIR)/%.c=$(BUILD_MEM_DIR)/%_c.o)
 
 
-benos.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
-	$(GNU)-ld -z muldefs -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/os.elf  $(OBJ_FILES) $(LIB_DIR)/*.a -Map os.map; echo " LD $(BUILD_DIR)/os.elf"
-	$(GNU)-objcopy $(BUILD_DIR)/os.elf -O binary os.bin; echo " OBJCOPY os.bin"
-	cp $(BUILD_DIR)/os.elf os.elf
+kernel-qemu.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
+	$(GNU)-ld -z muldefs -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel-qemu.elf  $(OBJ_FILES) $(LIB_DIR)/*.a -Map os.map; echo " LD $(BUILD_DIR)/kernel-qemu.elf"
+	$(GNU)-objcopy $(BUILD_DIR)/kernel-qemu.elf -O binary kernel-qemu; echo " OBJCOPY kernel-qemu"
+	cp $(BUILD_DIR)/kernel-qemu.elf kernel-qemu.elf
 	
 
 ######################run qemu#########################################
 QEMU_FLAGS  += -nographic  -machine virt  -m 128M -smp 2 
-QEMU_BIOS = -bios default	  -kernel os.elf
+QEMU_BIOS = -bios default	  -kernel kernel-qemu
 QEMU_DEVICES = -device loader,file=os.bin,addr=0x80200000  
 #./bootloader/fw_jump.bin
 run:
 	qemu-system-riscv64 $(QEMU_FLAGS) $(QEMU_BIOS) 
 debug:
 	qemu-system-riscv64 $(QEMU_FLAGS) $(QEMU_BIOS) -gdb tcp::1234 -S 
-	riscv64-unknown-elf-gdb ./os.elf
+	riscv64-unknown-elf-gdb ./kernel-qemu.bin.elf
 	target remote localhost:1234

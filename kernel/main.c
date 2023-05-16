@@ -22,7 +22,7 @@ void kernel_main(void)
 	local_irq_enable;
 	//timer_init;
 	int a = TOTAL_PAGES;
-	printk("%d",a);
+	printk("Hello.");
 	plic_init();
 	printk("plic_init finish \n");
 	enable_uart_irq();
@@ -30,6 +30,8 @@ void kernel_main(void)
 	mem_init((unsigned long)_bss_end, ADDR_END);
 	printk("ready to init_mmu!!!!!!!!!!!!\n");
 	mmu_init();
+	//unsigned long c = (*(unsigned long*)(ADDR_END+4096));
+	//printk("%016lx",c);
 	while(1);
 	
 }
