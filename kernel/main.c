@@ -32,6 +32,5 @@ void kernel_main(void)
 	mmu_init();
 	//unsigned long c = (*(unsigned long*)(ADDR_END+4096));
 	//printk("%016lx",c);
-	while(1);
 	
 }
