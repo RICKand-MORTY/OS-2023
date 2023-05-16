@@ -10,7 +10,7 @@ _start:
 	li t0, 4096
 	add sp, sp, t0
 
-	tail kernel_main
+	call kernel_main
 
 .section .data
 .align  12

@@ -1,0 +1,345 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+                0x0000000080200000                . = 0x80200000
+                0x0000000080200000                _text_boot = .
+
+.text.boot      0x0000000080200000       0x14
+ *(.text.boot)
+ .text.boot     0x0000000080200000       0x14 build/os/boot_s.o
+                0x0000000080200000                _start
+                0x0000000080200014                _etext_boot = .
+                0x0000000080200018                . = ALIGN (0x8)
+                0x0000000080200018                _text = .
+
+.text           0x0000000080200018     0x1924
+ *(.text)
+ .text          0x0000000080200018       0x74 build/os/main_c.o
+                0x0000000080200018                kernel_main
+ .text          0x000000008020008c      0x174 build/os/urat_c.o
+                0x000000008020008c                uart_send
+                0x00000000802000cc                uart_get
+                0x0000000080200104                uart_send_string
+                0x000000008020013a                uart_init
+                0x00000000802001ea                enable_uart_irq
+ .text          0x0000000080200200        0x0 build/os/boot_s.o
+ .text          0x0000000080200200       0xd6 build/os/entry_s.o
+                0x0000000080200200                do_exception_vector
+                0x00000000802002bc                enable_mmu
+ .text          0x00000000802002d6       0x6a build/lib/lib_c.o
+                0x00000000802002d6                strlen
+                0x00000000802002fe                memset
+ .text          0x0000000080200340      0x8b8 build/lib/printk_c.o
+                0x000000008020037a                skip_atoi
+                0x0000000080200690                vsprintf
+                0x0000000080200baa                printk
+ .text          0x0000000080200bf8      0x226 build/trap/plic_c.o
+                0x0000000080200bf8                plic_set_prority
+                0x0000000080200c2c                plic_switch_irq
+                0x0000000080200ce6                handle_plic_irq
+                0x0000000080200d52                handle_uart_irq
+                0x0000000080200d94                plic_init
+ .text          0x0000000080200e1e      0x102 build/trap/stacktrace_c.o
+                0x0000000080200f04                stack_trace
+ .text          0x0000000080200f20       0x2c build/trap/timer_c.o
+                0x0000000080200f20                reset_timer
+ .text          0x0000000080200f4c      0x26e build/trap/trap_c.o
+                0x0000000080200f4c                trap_init
+                0x0000000080200fc8                show_regs
+                0x0000000080201106                do_exception
+                0x0000000080201172                handle_timer
+ .text          0x00000000802011ba      0x3f4 build/memory/mmu_map_c.o
+                0x00000000802011ba                alloc_pgtable
+                0x00000000802011f2                get_pmd_from_pgd
+                0x000000008020121a                get_pte_from_pmd
+                0x0000000080201242                pt_pgd_item
+                0x0000000080201266                create_identity_mapping
+                0x0000000080201304                create_VIRT_UART_mapping
+                0x000000008020135c                create_pgd_mapping
+                0x0000000080201400                create_pmd_mapping
+                0x00000000802014ce                create_pte_mapping
+                0x000000008020157a                mmu_init
+ .text          0x00000000802015ae      0x38e build/memory/page_alloc_c.o
+                0x00000000802015ae                mem_init
+                0x0000000080201670                page_alloc
+                0x000000008020176e                page_free
+                0x000000008020188c                page_free_addr
+                0x0000000080202000                . = ALIGN (0x1000)
+                0x0000000080202000                _etext = .
+                0x0000000080202000                _rodata = .
+
+.rodata         0x0000000080202000      0x8f0
+ *(.rodata)
+ .rodata        0x0000000080202000       0x61 build/os/main_c.o
+ *fill*         0x0000000080202061        0x7 
+ .rodata        0x0000000080202068      0x1e4 build/lib/printk_c.o
+ *fill*         0x000000008020224c        0x4 
+ .rodata        0x0000000080202250       0x62 build/trap/plic_c.o
+ *fill*         0x00000000802022b2        0x6 
+ .rodata        0x00000000802022b8       0x35 build/trap/stacktrace_c.o
+ *fill*         0x00000000802022ed        0x3 
+ .rodata        0x00000000802022f0      0x3ea build/trap/trap_c.o
+ *fill*         0x00000000802026da        0x6 
+ .rodata        0x00000000802026e0      0x149 build/memory/mmu_map_c.o
+ *fill*         0x0000000080202829        0x7 
+ .rodata        0x0000000080202830       0xc0 build/memory/page_alloc_c.o
+                0x00000000802028f0                _erodata = .
+                0x00000000802028f0                _data = .
+
+.rela.dyn       0x00000000802028f0        0x0
+ .rela.text     0x00000000802028f0        0x0 build/os/main_c.o
+
+.data           0x0000000080203000     0x1080
+ *(.data)
+ .data          0x0000000080203000        0x0 build/os/main_c.o
+ .data          0x0000000080203000        0x0 build/os/urat_c.o
+ .data          0x0000000080203000     0x1000 build/os/boot_s.o
+                0x0000000080203000                stacks_start
+ .data          0x0000000080204000        0x0 build/os/entry_s.o
+ .data          0x0000000080204000        0x0 build/lib/lib_c.o
+ .data          0x0000000080204000        0x0 build/lib/printk_c.o
+ .data          0x0000000080204000        0x0 build/trap/plic_c.o
+ .data          0x0000000080204000        0x0 build/trap/stacktrace_c.o
+ .data          0x0000000080204000        0x0 build/trap/timer_c.o
+ .data          0x0000000080204000       0x80 build/trap/trap_c.o
+                0x0000000080204000                error_msg
+ .data          0x0000000080204080        0x0 build/memory/mmu_map_c.o
+ .data          0x0000000080204080        0x0 build/memory/page_alloc_c.o
+
+.sdata          0x0000000080204080        0x4
+ .sdata         0x0000000080204080        0x4 build/os/urat_c.o
+                0x0000000080205000                . = ALIGN (0x1000)
+                0x0000000080205000                _pgd_page = .
+                0x0000000080206000                . = (. + 0x1000)
+                0x0000000080206000                _edata = .
+                0x0000000080206000                . = ALIGN (0x8)
+                0x0000000080206000                _bss_begin = .
+
+.bss            0x0000000080206000     0x7008
+ *(.bss*)
+ .bss           0x0000000080206000     0x1000 build/os/main_c.o
+                0x0000000080206000                buf
+ .bss           0x0000000080207000        0x0 build/os/urat_c.o
+ .bss           0x0000000080207000        0x0 build/os/boot_s.o
+ .bss           0x0000000080207000        0x0 build/os/entry_s.o
+ .bss           0x0000000080207000        0x0 build/lib/lib_c.o
+ .bss           0x0000000080207000     0x1000 build/lib/printk_c.o
+ .bss           0x0000000080208000        0x0 build/trap/plic_c.o
+ .bss           0x0000000080208000        0x0 build/trap/stacktrace_c.o
+ .bss           0x0000000080208000     0x1000 build/trap/timer_c.o
+ .bss           0x0000000080209000     0x1000 build/trap/trap_c.o
+ .bss           0x000000008020a000     0x1000 build/memory/mmu_map_c.o
+ .bss           0x000000008020b000     0x2008 build/memory/page_alloc_c.o
+                0x000000008020c000                pages_bitmaps
+                0x000000008020d008                _bss_end = .
+LOAD build/os/main_c.o
+LOAD build/os/urat_c.o
+LOAD build/os/boot_s.o
+LOAD build/os/entry_s.o
+LOAD build/lib/lib_c.o
+LOAD build/lib/printk_c.o
+LOAD build/trap/plic_c.o
+LOAD build/trap/stacktrace_c.o
+LOAD build/trap/timer_c.o
+LOAD build/trap/trap_c.o
+LOAD build/memory/mmu_map_c.o
+LOAD build/memory/page_alloc_c.o
+LOAD lib/libsbi.a
+OUTPUT(build/os/kernel-qemu.elf elf64-littleriscv)
+
+.sbss           0x000000008020d008       0x20
+ .sbss          0x000000008020d008        0x8 build/trap/trap_c.o
+                0x000000008020d008                count_timer
+ .sbss          0x000000008020d010       0x18 build/memory/page_alloc_c.o
+                0x000000008020d010                phy_start_address
+                0x000000008020d018                global_free_pages
+                0x000000008020d020                global_total_pages
+
+.debug_info     0x0000000000000000     0x1c3a
+ .debug_info    0x0000000000000000      0x13d build/os/main_c.o
+ .debug_info    0x000000000000013d      0x2da build/os/urat_c.o
+ .debug_info    0x0000000000000417       0x28 build/os/boot_s.o
+ .debug_info    0x000000000000043f       0x29 build/os/entry_s.o
+ .debug_info    0x0000000000000468       0xfe build/lib/lib_c.o
+ .debug_info    0x0000000000000566      0x3f5 build/lib/printk_c.o
+ .debug_info    0x000000000000095b      0x51b build/trap/plic_c.o
+ .debug_info    0x0000000000000e76      0x188 build/trap/stacktrace_c.o
+ .debug_info    0x0000000000000ffe       0xda build/trap/timer_c.o
+ .debug_info    0x00000000000010d8      0x38d build/trap/trap_c.o
+ .debug_info    0x0000000000001465      0x563 build/memory/mmu_map_c.o
+ .debug_info    0x00000000000019c8      0x272 build/memory/page_alloc_c.o
+
+.debug_abbrev   0x0000000000000000      0xdab
+ .debug_abbrev  0x0000000000000000      0x137 build/os/main_c.o
+ .debug_abbrev  0x0000000000000137      0x11c build/os/urat_c.o
+ .debug_abbrev  0x0000000000000253       0x14 build/os/boot_s.o
+ .debug_abbrev  0x0000000000000267       0x14 build/os/entry_s.o
+ .debug_abbrev  0x000000000000027b       0xc2 build/lib/lib_c.o
+ .debug_abbrev  0x000000000000033d      0x1ca build/lib/printk_c.o
+ .debug_abbrev  0x0000000000000507      0x1ca build/trap/plic_c.o
+ .debug_abbrev  0x00000000000006d1      0x148 build/trap/stacktrace_c.o
+ .debug_abbrev  0x0000000000000819       0x89 build/trap/timer_c.o
+ .debug_abbrev  0x00000000000008a2      0x1dc build/trap/trap_c.o
+ .debug_abbrev  0x0000000000000a7e      0x1e5 build/memory/mmu_map_c.o
+ .debug_abbrev  0x0000000000000c63      0x148 build/memory/page_alloc_c.o
+
+.debug_aranges  0x0000000000000000      0x240
+ .debug_aranges
+                0x0000000000000000       0x30 build/os/main_c.o
+ .debug_aranges
+                0x0000000000000030       0x30 build/os/urat_c.o
+ .debug_aranges
+                0x0000000000000060       0x30 build/os/boot_s.o
+ .debug_aranges
+                0x0000000000000090       0x30 build/os/entry_s.o
+ .debug_aranges
+                0x00000000000000c0       0x30 build/lib/lib_c.o
+ .debug_aranges
+                0x00000000000000f0       0x30 build/lib/printk_c.o
+ .debug_aranges
+                0x0000000000000120       0x30 build/trap/plic_c.o
+ .debug_aranges
+                0x0000000000000150       0x30 build/trap/stacktrace_c.o
+ .debug_aranges
+                0x0000000000000180       0x30 build/trap/timer_c.o
+ .debug_aranges
+                0x00000000000001b0       0x30 build/trap/trap_c.o
+ .debug_aranges
+                0x00000000000001e0       0x30 build/memory/mmu_map_c.o
+ .debug_aranges
+                0x0000000000000210       0x30 build/memory/page_alloc_c.o
+
+.debug_line     0x0000000000000000     0x1bc5
+ .debug_line    0x0000000000000000       0xda build/os/main_c.o
+ .debug_line    0x00000000000000da      0x181 build/os/urat_c.o
+ .debug_line    0x000000000000025b       0x64 build/os/boot_s.o
+ .debug_line    0x00000000000002bf       0xa3 build/os/entry_s.o
+ .debug_line    0x0000000000000362      0x104 build/lib/lib_c.o
+ .debug_line    0x0000000000000466      0xa14 build/lib/printk_c.o
+ .debug_line    0x0000000000000e7a      0x254 build/trap/plic_c.o
+ .debug_line    0x00000000000010ce      0x190 build/trap/stacktrace_c.o
+ .debug_line    0x000000000000125e       0x6f build/trap/timer_c.o
+ .debug_line    0x00000000000012cd      0x1ac build/trap/trap_c.o
+ .debug_line    0x0000000000001479      0x402 build/memory/mmu_map_c.o
+ .debug_line    0x000000000000187b      0x34a build/memory/page_alloc_c.o
+
+.debug_str      0x0000000000000000      0x593
+ .debug_str     0x0000000000000000       0xf3 build/os/main_c.o
+                                         0xf8 (size before relaxing)
+ .debug_str     0x00000000000000f3       0x60 build/os/urat_c.o
+                                        0x123 (size before relaxing)
+ .debug_str     0x0000000000000153       0x3d build/os/boot_s.o
+ .debug_str     0x0000000000000190        0xf build/os/entry_s.o
+                                         0x3e (size before relaxing)
+ .debug_str     0x000000000000019f       0x19 build/lib/lib_c.o
+                                         0xb5 (size before relaxing)
+ .debug_str     0x00000000000001b8       0x9f build/lib/printk_c.o
+                                        0x168 (size before relaxing)
+ .debug_str     0x0000000000000257       0x7d build/trap/plic_c.o
+                                        0x165 (size before relaxing)
+ .debug_str     0x00000000000002d4       0x3b build/trap/stacktrace_c.o
+                                        0x106 (size before relaxing)
+ .debug_str     0x000000000000030f       0x12 build/trap/timer_c.o
+                                         0xae (size before relaxing)
+ .debug_str     0x0000000000000321       0x6d build/trap/trap_c.o
+                                        0x160 (size before relaxing)
+ .debug_str     0x000000000000038e      0x165 build/memory/mmu_map_c.o
+                                        0x251 (size before relaxing)
+ .debug_str     0x00000000000004f3       0xa0 build/memory/page_alloc_c.o
+                                        0x175 (size before relaxing)
+
+.debug_line_str
+                0x0000000000000000      0x20e
+ .debug_line_str
+                0x0000000000000000       0x8a build/os/main_c.o
+                                         0xc1 (size before relaxing)
+ .debug_line_str
+                0x000000000000008a        0xe build/os/urat_c.o
+                                         0x7e (size before relaxing)
+ .debug_line_str
+                0x0000000000000098        0x7 build/os/boot_s.o
+                                         0x2f (size before relaxing)
+ .debug_line_str
+                0x000000000000009f        0x8 build/os/entry_s.o
+                                         0x30 (size before relaxing)
+ .debug_line_str
+                0x00000000000000a7        0xa build/lib/lib_c.o
+                                         0x5c (size before relaxing)
+ .debug_line_str
+                0x00000000000000b1       0x6d build/lib/printk_c.o
+                                         0xce (size before relaxing)
+ .debug_line_str
+                0x000000000000011e       0x39 build/trap/plic_c.o
+                                         0x97 (size before relaxing)
+ .debug_line_str
+                0x0000000000000157       0x19 build/trap/stacktrace_c.o
+                                         0x81 (size before relaxing)
+ .debug_line_str
+                0x0000000000000170       0x2a build/trap/timer_c.o
+                                         0x91 (size before relaxing)
+ .debug_line_str
+                0x000000000000019a       0x1b build/trap/trap_c.o
+                                         0xbe (size before relaxing)
+ .debug_line_str
+                0x00000000000001b5       0x3e build/memory/mmu_map_c.o
+                                         0xc1 (size before relaxing)
+ .debug_line_str
+                0x00000000000001f3       0x1b build/memory/page_alloc_c.o
+                                         0xbb (size before relaxing)
+
+.comment        0x0000000000000000       0x1b
+ .comment       0x0000000000000000       0x1b build/os/main_c.o
+                                         0x1c (size before relaxing)
+ .comment       0x000000000000001b       0x1c build/os/urat_c.o
+ .comment       0x000000000000001b       0x1c build/lib/lib_c.o
+ .comment       0x000000000000001b       0x1c build/lib/printk_c.o
+ .comment       0x000000000000001b       0x1c build/trap/plic_c.o
+ .comment       0x000000000000001b       0x1c build/trap/stacktrace_c.o
+ .comment       0x000000000000001b       0x1c build/trap/timer_c.o
+ .comment       0x000000000000001b       0x1c build/trap/trap_c.o
+ .comment       0x000000000000001b       0x1c build/memory/mmu_map_c.o
+ .comment       0x000000000000001b       0x1c build/memory/page_alloc_c.o
+
+.riscv.attributes
+                0x0000000000000000       0x38
+ .riscv.attributes
+                0x0000000000000000       0x38 build/os/main_c.o
+ .riscv.attributes
+                0x0000000000000038       0x34 build/os/urat_c.o
+ .riscv.attributes
+                0x000000000000006c       0x36 build/os/boot_s.o
+ .riscv.attributes
+                0x00000000000000a2       0x36 build/os/entry_s.o
+ .riscv.attributes
+                0x00000000000000d8       0x34 build/lib/lib_c.o
+ .riscv.attributes
+                0x000000000000010c       0x34 build/lib/printk_c.o
+ .riscv.attributes
+                0x0000000000000140       0x38 build/trap/plic_c.o
+ .riscv.attributes
+                0x0000000000000178       0x34 build/trap/stacktrace_c.o
+ .riscv.attributes
+                0x00000000000001ac       0x38 build/trap/timer_c.o
+ .riscv.attributes
+                0x00000000000001e4       0x38 build/trap/trap_c.o
+ .riscv.attributes
+                0x000000000000021c       0x34 build/memory/mmu_map_c.o
+ .riscv.attributes
+                0x0000000000000250       0x34 build/memory/page_alloc_c.o
+
+.debug_frame    0x0000000000000000      0x698
+ .debug_frame   0x0000000000000000       0x30 build/os/main_c.o
+ .debug_frame   0x0000000000000030       0xc0 build/os/urat_c.o
+ .debug_frame   0x00000000000000f0       0x50 build/lib/lib_c.o
+ .debug_frame   0x0000000000000140       0xc8 build/lib/printk_c.o
+ .debug_frame   0x0000000000000208       0xd0 build/trap/plic_c.o
+ .debug_frame   0x00000000000002d8       0x88 build/trap/stacktrace_c.o
+ .debug_frame   0x0000000000000360       0x30 build/trap/timer_c.o
+ .debug_frame   0x0000000000000390       0xd0 build/trap/trap_c.o
+ .debug_frame   0x0000000000000460      0x188 build/memory/mmu_map_c.o
+ .debug_frame   0x00000000000005e8       0xb0 build/memory/page_alloc_c.o
