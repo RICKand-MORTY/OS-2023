@@ -16,23 +16,23 @@ extern char _text_boot[];
 
 void kernel_main(void)
 {
-	uart_init();
+	//uart_init();
 	//uart_send_string("Welcome RISC-V!\r\n");
-	trap_init();
-	local_irq_enable;
-	timer_init;
+	//trap_init();
+	//local_irq_enable;
+	//timer_init;
 	//int a = TOTAL_PAGES;
 	//printk("Hello.\n");
-	plic_init();
+	//plic_init();
 	//printk("plic_init finish \n");
-	enable_uart_irq();
+	//enable_uart_irq();
 	//printk("uart irq enable! \n");
-	mem_init((unsigned long)_bss_end, ADDR_END);
+	//mem_init((unsigned long)_bss_end, ADDR_END);
 	//printk("ready to init_mmu!!!!!!!!!!!!\n");
-	mmu_init();
+	//mmu_init();
 	//unsigned long c = (*(unsigned long*)(ADDR_END+4096));
 	//printk("%016lx",c);
-	printk("mmu_ok\n");
+	//printk("mmu_ok\n");
 	printk("Hello.\n");
 	SBI_SHUTDOWN;
 }
