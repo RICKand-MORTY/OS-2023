@@ -20,7 +20,7 @@ void kernel_main(void)
 	uart_send_string("Welcome RISC-V!\r\n");
 	trap_init();
 	local_irq_enable;
-	timer_init;
+	//timer_init;
 	//int a = TOTAL_PAGES;
 	//printk("Hello.\n");
 	//plic_init();
@@ -37,5 +37,8 @@ void kernel_main(void)
 	printk("test test\n");
 	printk("This is test!\n");
 	printk("\n\nHello.\n");
+	printk("========== START test_write ==========\n");
+    printk("Hello operating system contest.\n");
+    printk("========== END test_write ==========\n\n");
 	SBI_SHUTDOWN;
 }
