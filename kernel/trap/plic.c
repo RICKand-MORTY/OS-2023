@@ -49,20 +49,23 @@ void handle_plic_irq(struct pt_regs *regs)
 }
 
 //uart handle function
-void handle_uart_irq()
+int handle_uart_irq()
 {
     char c = uart_get();
+    int length = 0; 
     if(c < 0)
     {
-        return;
+        return -1;
     }
     else if (c == '\r')
     {
-        printk("uart interrupt!%s\n", __func__);
+        printk("\n");
+        return c;
     }
     else
     {
         uart_send(c);
+        return 0;
     }
 }
 

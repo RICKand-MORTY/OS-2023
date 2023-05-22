@@ -14,6 +14,7 @@
         "plic.h": "c",
         "page_table.h": "c",
         "memory.h": "c",
-        "lib.h": "c"
+        "lib.h": "c",
+        "spinlock.h": "c"
     }
 }

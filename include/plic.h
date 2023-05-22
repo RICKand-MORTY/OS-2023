@@ -25,5 +25,5 @@ void plic_set_prority(int irq_num, int pri);
 void plic_switch_irq(int core, int irq_num, bool on_off);
 void handle_plic_irq(struct pt_regs *regs);
 int plic_init();
-void handle_uart_irq();
+int handle_uart_irq();
 #endif

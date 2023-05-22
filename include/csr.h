@@ -12,8 +12,8 @@
 #define SSTATUS_SPIE 0x20UL      //previous interrupt status
 #define SSTATUS_SPP 0x100UL      //Mode before interrupt
 
-#define local_irq_enable csr_set(sstatus, SSTATUS_SIE)      //enable SSTATUS_SIE (enable interrupt on S mode)
-#define local_irq_disable csr_clr(sstatus, SSTATUS_SIE)     //disable SSTATUS_SIE
+#define local_irq_enable() 	csr_set(sstatus, SSTATUS_SIE)      //enable SSTATUS_SIE (enable interrupt on S mode)
+#define local_irq_disable() csr_clr(sstatus, SSTATUS_SIE)     //disable SSTATUS_SIE
 
 
 #define write_csr(csr,val)						\

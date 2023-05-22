@@ -8,6 +8,7 @@
 #include "../include/plic.h"
 #include "../lib/lib.h"
 #include <memory.h>
+#include <spinlock.h>
 
 extern char _bss_begin[], _bss_end[];
 extern char _text[], _etext[];
@@ -19,11 +20,11 @@ void kernel_main(void)
 	uart_init();
 	uart_send_string("Welcome RISC-V!\r\n");
 	trap_init();
-	local_irq_enable;
-	//timer_init;
+	local_irq_enable();
+	//timer_init();
 	//int a = TOTAL_PAGES;
 	//printk("Hello.\n");
-	//plic_init();
+	plic_init();
 	printk("plic_init finish \n");
 	enable_uart_irq();
 	printk("uart irq enable! \n");
@@ -40,5 +41,12 @@ void kernel_main(void)
 	printk("========== START test_write ==========\n");
     printk("Hello operating system contest.\n");
     printk("========== END test_write ==========\n\n");
-	SBI_SHUTDOWN;
+	sbi_remote_SFENCE_VMA_with_ASID(0,0,0,0);
+	spinlock lock;
+	spin_init(&lock);
+	printk("%d\n",lock.lock);
+	spin_lock(&lock);
+	spin_unlock(&lock);
+	printk("aaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
+	while(1);
 }
