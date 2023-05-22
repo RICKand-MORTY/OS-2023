@@ -12,7 +12,7 @@ void spin_init(spinlock_P lock)
 //acquire spinlock
 void spin_lock(spinlock_P lock)
 {
-    write_csr(sie, ~SIE_SEIE);      //need to disable interrupt to avoid dead lock
+    csr_clr(sie, SIE_SEIE);      //need to disable interrupt to avoid dead lock
     register unsigned long a1 asm ("a1") = &(lock->lock); 
     __asm__ __volatile__ (
         "1:# get_lock\n"
@@ -31,7 +31,7 @@ void spin_lock(spinlock_P lock)
 //release spinlock
 void spin_unlock(spinlock_P lock)
 {
-    write_csr(sie, ~SIE_SEIE);
+    csr_clr(sie, SIE_SEIE);
     register unsigned long a1 asm ("a1") = &(lock->lock);
     __asm__ __volatile__(
         "sw x0, (%0)\n"
