@@ -3,10 +3,6 @@
 
 #define NULL 0
 
-typedef unsigned long u64; 
-typedef u64 pgd_page;
-typedef u64 pmd_page;    
-typedef u64 pte_page;
 
 #define PAGE_SHIFT           12
 #define PAGE_SIZE		    (1UL << PAGE_SHIFT)

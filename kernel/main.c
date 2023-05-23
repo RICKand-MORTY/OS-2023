@@ -9,11 +9,19 @@
 #include "../lib/lib.h"
 #include <memory.h>
 #include <spinlock.h>
+#include <process.h>
 
 extern char _bss_begin[], _bss_end[];
 extern char _text[], _etext[];
 extern char _text_boot[];
 
+
+void thread_1()
+{
+    printk("thread 2!\n");
+	printk("thread 2!\n");
+	printk("thread 3!\n");
+}
 
 void kernel_main(void)
 {
@@ -48,5 +56,8 @@ void kernel_main(void)
 	spin_lock(&lock);
 	spin_unlock(&lock);
 	printk("aaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
+	int pid = do_fork(KERNEL_THREAD, thread_1, NULL);
+	printk("pid = %d",pid);
+	switch_to(g_task[pid]);
 	while(1);
 }

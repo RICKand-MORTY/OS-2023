@@ -12,7 +12,7 @@ void spin_init(spinlock_P lock)
 //acquire spinlock
 void spin_lock(spinlock_P lock)
 {
-    csr_clr(sie, SIE_SEIE);      //need to disable interrupt to avoid dead lock
+    csr_clr(sie, SIE_SEIE);      //need to disable extern interrupt to avoid dead lock
     register unsigned long a1 asm ("a1") = &(lock->lock); 
     __asm__ __volatile__ (
         "1:# get_lock\n"
@@ -24,7 +24,7 @@ void spin_lock(spinlock_P lock)
         :
         :"a2", "a3", "memory"
     );
-    csr_set(sie, SIE_SEIE);     //enable timer interrupt
+    csr_set(sie, SIE_SEIE);     //enable extern interrupt
     printk("%d\n",lock->lock);
 }
 

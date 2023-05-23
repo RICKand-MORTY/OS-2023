@@ -17,10 +17,15 @@ SECTIONS
 	_erodata = .;
 
 	_data = .;
-	.data : { *(.data) }
+	.data : { 
+		*(.data) 
+		. = ALIGN(4096);
+		*(.data.init_task)
+		}
 	. = ALIGN(4096);
-       _pgd_page = .;
+       _pgd_page_begin = .;
        . += 4096;
+	   _pgd_page_end = .;
 	_edata = .;
 	
 	. = ALIGN(0x8);

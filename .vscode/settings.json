@@ -15,6 +15,9 @@
         "page_table.h": "c",
         "memory.h": "c",
         "lib.h": "c",
-        "spinlock.h": "c"
+        "spinlock.h": "c",
+        "sched.h": "c",
+        "scheduler.h": "c",
+        "process.h": "c"
     }
 }

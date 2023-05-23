@@ -6,7 +6,7 @@
 
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
-extern char _pgd_page[];
+extern char _pgd_page_begin[], _pgd_page_end[];
 
 
 #define RAM_ADDR    0x80000000UL
@@ -20,6 +20,11 @@ extern char _pgd_page[];
 #define CLINT_SIZE	     0x10000UL
 #define UART_SIZE        4096
 
+typedef unsigned long u64; 
+typedef u64 pgd_page;
+typedef u64 pmd_page;    
+typedef u64 pte_page;
+
 //page_alloc.c
 void mem_init(u64 mem_start, u64 mem_end);
 unsigned long page_alloc();
@@ -28,6 +33,7 @@ int page_free_addr(unsigned long addr);
 
 //mmu_map.c
 unsigned long alloc_pgtable();
+void mmu_init(void);
 pmd_page* get_pmd_from_pgd(pgd_page* pgd_ptr,u64 va);
 pmd_page* get_pte_from_pmd(pmd_page* pgd_ptr,u64 va);
 void pt_pgd_item(pgd_page* pgd_ptr, pgd_page pgd, u64 attr);

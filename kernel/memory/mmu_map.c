@@ -48,22 +48,22 @@ void create_identity_mapping()
     //mapping _text_boot and _etext;
     u64 start = (unsigned long)_text_boot;
     u64 end = (unsigned long )_etext;
-    create_pgd_mapping((pgd_page*)_pgd_page, start, start, end - start, PAGE_KERNEL_READ_EXEC, alloc_pgtable, 0);
+    create_pgd_mapping((pgd_page*)_pgd_page_begin, start, start, end - start, PAGE_KERNEL_READ_EXEC, alloc_pgtable, 0);
     printk("_text_boot and _etext map done!\n");
     
     //mapping _etext and ADDR_END
     start = PAGE_ALIGN_UP((unsigned long)_etext);
     end = ADDR_END;
-    create_pgd_mapping((pgd_page*)_pgd_page, start, start, end - start, PAGE_KERNEL, alloc_pgtable, 0);
+    create_pgd_mapping((pgd_page*)_pgd_page_begin, start, start, end - start, PAGE_KERNEL, alloc_pgtable, 0);
     printk("_etext map done!\n");
 }
 
 void create_VIRT_UART_mapping()
 {
     u64 start = CLINT_ADDR;
-    create_pgd_mapping((pgd_page*)_pgd_page, start, start, CLINT_SIZE, PAGE_KERNEL, alloc_pgtable, 0);
+    create_pgd_mapping((pgd_page*)_pgd_page_begin, start, start, CLINT_SIZE, PAGE_KERNEL, alloc_pgtable, 0);
     start = UART_ADDR;
-    create_pgd_mapping((pgd_page*)_pgd_page, start, start, UART_SIZE, PAGE_KERNEL, alloc_pgtable, 0);
+    create_pgd_mapping((pgd_page*)_pgd_page_begin, start, start, UART_SIZE, PAGE_KERNEL, alloc_pgtable, 0);
 }
 void create_pgd_mapping(
     pgd_page* pgd_base,             /*PGD page base address(in satp PNN)*/
@@ -171,7 +171,7 @@ void create_pte_mapping(
 /*equally mapping*/
 void mmu_init(void)
 {
-    memset(_pgd_page, 0, PAGE_SIZE);
+    memset(_pgd_page_begin, 0, PAGE_SIZE);
     create_identity_mapping();
     create_VIRT_UART_mapping();
     enable_mmu();
