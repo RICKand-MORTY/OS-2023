@@ -14,24 +14,50 @@
 extern char _bss_begin[], _bss_end[];
 extern char _text[], _etext[];
 extern char _text_boot[];
+void _start(void);
+void _hart_start(void);
+typedef struct sbiret {
+  long error;
+  long value;
+}error;
 
+
+spinlock print_lock = {.lock = 0};
 
 void thread_1()
 {
-    printk("thread 2!\n");
-	printk("thread 2!\n");
-	printk("thread 3!\n");
+   while (1)
+   {	
+		delay(1000);
+		printk("this is qwk\n");
+   }
+}
+
+void thread_2()
+{
+    while (1)
+    {
+		delay(1000);
+		printk("this is hc\n");
+    }
+}
+
+void thread_3()
+{
+    while (1)
+    {
+		delay(1000);
+		printk("this is lsj\n");
+    }
 }
 
 void kernel_main(void)
 {
 	uart_init();
 	uart_send_string("Welcome RISC-V!\r\n");
+	sched_init();
 	trap_init();
 	local_irq_enable();
-	//timer_init();
-	//int a = TOTAL_PAGES;
-	//printk("Hello.\n");
 	plic_init();
 	printk("plic_init finish \n");
 	enable_uart_irq();
@@ -39,25 +65,15 @@ void kernel_main(void)
 	mem_init((unsigned long)_bss_end, ADDR_END);
 	printk("ready to init_mmu!!!!!!!!!!!!\n");
 	mmu_init();
-	//unsigned long c = (*(unsigned long*)(ADDR_END+4096));
-	//printk("%016lx",c);
 	printk("mmu_ok\n");
-	sbi_putstr("Hello.\n");
-	printk("test test\n");
-	printk("This is test!\n");
-	printk("\n\nHello.\n");
-	printk("========== START test_write ==========\n");
-    printk("Hello operating system contest.\n");
-    printk("========== END test_write ==========\n\n");
-	sbi_remote_SFENCE_VMA_with_ASID(0,0,0,0);
-	spinlock lock;
-	spin_init(&lock);
-	printk("%d\n",lock.lock);
-	spin_lock(&lock);
-	spin_unlock(&lock);
-	printk("aaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
-	int pid = do_fork(KERNEL_THREAD, thread_1, NULL);
-	printk("pid = %d",pid);
-	switch_to(g_task[pid]);
+	timer_init();
+	//printk("\n\nHello.\n");
+	//printk("========== START test_write ==========\n");
+    //printk("Hello operating system contest.\n");
+    //printk("========== END test_write ==========\n\n");
+	int pid1 = do_fork(KERNEL_THREAD, thread_1, NULL);
+	int pid2 = do_fork(KERNEL_THREAD, thread_2, NULL);
+	int pid3 = do_fork(KERNEL_THREAD, thread_3, NULL);
+	switch_to(get_current_task(),g_task[pid1]);
 	while(1);
 }

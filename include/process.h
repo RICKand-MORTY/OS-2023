@@ -3,6 +3,7 @@
 
 
 #include "scheduler.h"
+#include "LinkList.h"
 
 //store cpu context 
 typedef struct _cpu_context
@@ -17,10 +18,41 @@ typedef struct task_struct
     cpu_context context; 
     volatile long task_state;    
     unsigned long task_flags;
-    long count;         //time slice
-    long pid;
-    long priority;
+    struct list_head task_list;
+    int count;              //time slice 
+    int need_schedule;      //if need to scheduled
+    int pid;
+    int scramble;           //if is scramble           
+    int priority;
+    struct task_struct *next_task;
+    struct task_struct *prev_task;
 }PCB;
+
+struct ready_queue
+{
+    struct list_head queue_head;
+    unsigned int task_num;          //number of tasks
+    unsigned long switch_times;     //process switches times
+    PCB *currrent;                  //point to current process
+};
+
+
+//kernel stack struct
+union task_union {
+	PCB task;
+	unsigned long stack[THREAD_SIZE/sizeof(long)];
+}__attribute__((aligned(sizeof(long))));
+
+struct sched_class {
+	const struct sched_class *next;     //point to next sched_class
+
+	void (*task_fork)(struct task_struct *p);       //initial process method
+	void (*enqueue_task)(struct run_queue *rq, struct task_struct *p);  //add in ready queue
+	void (*dequeue_task)(struct run_queue *rq, struct task_struct *p);  //dequeue from ready queue
+	void (*task_tick)(struct run_queue *rq, struct task_struct *p);     //time interrupt
+	struct task_struct * (*pick_next_task)(struct run_queue *rq,        //choose next process
+			struct task_struct *prev);
+};
 
 //use to initial init process(kernel_main)
 #define TASK_INIT(task)                 \
@@ -31,11 +63,18 @@ typedef struct task_struct
     .pid        = 0,                    \
 }
 
-//kernel stack struct
-union task_union {
-	PCB task;
-	unsigned long stack[THREAD_SIZE/sizeof(long)];
-}__attribute__((aligned(sizeof(long))));
+/*
+use to get address of struct according to member
+ptr: address of member
+type: type of struct
+member: member in struct
+return address of struct
+*/
+#define container_of(ptr,type,member)                                                           \
+({                                                                                              \
+    const typeof(((type *)0)->member) * p = (const typeof( ((type *)0)->member ) *)(ptr);       \
+    (type *)((unsigned long)p - (unsigned long)&(((type *)0)->member));                         \
+})
 
 PCB *get_current_task(void)
 {
@@ -43,12 +82,22 @@ PCB *get_current_task(void)
     return tp;
 }
 
+void delay(int time)
+{
+    for(int i=0;i<time;i++);
+}
+
+extern const struct sched_class simple_sched_class;
 extern PCB *g_task[TOTAL_TASK];
+extern struct ready_queue g_queue;
+extern void ret_from_kernel_thread(void);
+extern struct task_struct *cpu_switch_to(PCB *prev, PCB *next);
 
 int find_pid();
 struct pt_regs *get_pt_reg(PCB *pcb);
 int do_fork(unsigned long clone_flags, unsigned long callback_fun, unsigned long arg);
-void switch_to(PCB *next);
-extern void ret_from_kernel_thread(void);
-extern struct task_struct *cpu_switch_to(PCB *prev, PCB *next);
+PCB* switch_to(PCB *prev,PCB *next);
+void sched_init(void);
+
+
 #endif

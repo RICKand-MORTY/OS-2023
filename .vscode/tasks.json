@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "isBackground": true,
+            "linux": {
+                "command": "make all;"
+            }
+        },
+        {
+            "label": "Run QEMU",
+            "type": "shell",
+            "isBackground": true,
+            "command": "echo Starting QEMU ; make debug ; sleep 2",
+            "presentation": {
+                "echo": true,
+                "clear": true,
+                "group": "Run QEMU"
+            },
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": "."
+                    }
+                }
+            ]
+        },
+        {
+            "label": "Build and run",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build",
+                "Run QEMU"
+            ]
+        }
+    ]
+}

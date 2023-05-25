@@ -1,8 +1,19 @@
 #include "../include/pt_offset.h"
 #include <scheduler.h>
+//sie register
+#define SIE_SSIE 0X02UL     //software interrupt
+#define SIE_STIE 0x20UL     //timer interrupt
+#define SIE_SEIE 0x200UL    //external interrupt
+
+//sstatus register 
+#define SSTATUS_SIE 0X02UL  //enable S mode interrupt
+#define SSTATUS_SPIE 0x20UL      //previous interrupt status
+#define SSTATUS_SPP 0x100UL      //Mode before interrupt
 
 .macro kernel_entry
+
 	addi sp, sp, -(PT_SIZE)
+	csrw sscratch, tp
 
 	sd x1,  PT_RA(sp)
 	sd x3,  PT_GP(sp)
@@ -133,11 +144,13 @@ cpu_switch_to:
 	ld s10, 96(a4)
 	ld s11, 104(a4)
 
+	move tp, a1
 	ret
 
 .align 2
 .global ret_from_kernel_thread
 ret_from_kernel_thread:
+	call schedule_tail
 	//jump to callback function
 	la ra, ret_from_exception
 	move a0, s1
@@ -153,6 +166,25 @@ do_exception_vector:
     tail do_exception
 
 ret_from_exception:
+	ld s0, PT_SSTATUS(sp)
+	csrc sstatus, SSTATUS_SIE
+	andi s0, s0, SSTATUS_SPP		/*judge whether is S mode interrupt*/
+	bnez s0, ret_to_kernel
+
+ret_to_kernel:
+	/*judge whether can preempt or not*/
+	lw s0, SCRAMBLE_OFFSET(tp)
+	beqz s0, restore_all
+
+can_preempt:
+	/*whether need to preempt*/
+	lw s0, NEED_SCHEDULE_OFFSET(tp)
+	andi s0, s0, 1
+	beqz s0, restore_all
+	/*preempt*/
+	call preempt_schedule
+	j can_preempt
+	
 restore_all:
     kernel_exit
     sret

@@ -18,6 +18,7 @@
         "spinlock.h": "c",
         "sched.h": "c",
         "scheduler.h": "c",
-        "process.h": "c"
+        "process.h": "c",
+        "linklist.h": "c"
     }
 }

@@ -4,6 +4,7 @@
 #include "../../include/csr.h"
 #include "../../include/timer.h"
 #include "../../include/plic.h"
+#include <process.h>
 
 #define SCAUSE_INT (1UL << 63)
 #define is_interrupt_fault(reg) (reg & (SCAUSE_INT))
@@ -106,6 +107,7 @@ void handle_timer(void)
 	csr_clr(sie, SIE_STIE);	//close timer interrupt
 	reset_timer();
 	count_timer++;
-	printk("Timer interrupt! count_timer=%lu\n",count_timer);
+	simple_sched_class.task_tick(&g_queue,get_current_task());
+	//printk("Timer interrupt! count_timer=%lu\n",count_timer);
 }
 

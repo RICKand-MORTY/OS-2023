@@ -9,7 +9,9 @@
 
 //kernel_main is init process
 union task_union init_task_union __init_task_data = {TASK_INIT(task)};
+struct ready_queue g_queue;
 
+int total_forks = 0;
 PCB *g_task[TOTAL_TASK] = {&init_task_union.task,};
 PCB *current = &init_task_union.task;
 
@@ -76,19 +78,24 @@ int do_fork(unsigned long clone_flags, unsigned long callback_fun, unsigned long
         return -1;
     }
     pcb->task_state = TASK_RUNNING;
+    pcb->priority = 2;
+    pcb->count = DEFAULT_SLICE + pcb->priority;
+	get_current_task()->count >>= 1;
+	pcb->need_schedule = 0;
+	pcb->scramble = 1;
+	total_forks++;
     pcb->pid = pid;
     g_task[pid] = pcb;
+    simple_sched_class.enqueue_task(&g_queue, pcb);
     return pid;
 }
 
-void switch_to(PCB *next)
+PCB* switch_to(PCB *prev,PCB *next)
 {
-    PCB *pre = current;
-    if(current == next)
+    if (prev == next)
     {
         printk("process is the same!\n");
-        return;
+        return NULL;
     }
-    current = next;
-    cpu_switch_to(pre, next);
+	return cpu_switch_to(prev, next);
 }

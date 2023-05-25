@@ -19,4 +19,3 @@ _start:
 .global stacks_start
 stacks_start:
 	.skip 4096
-

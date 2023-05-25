@@ -56,9 +56,9 @@ kernel-qemu: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
 	
 
 ######################run qemu#########################################
-QEMU_FLAGS  += -nographic  -machine virt  -m 128M -smp 2 
+QEMU_FLAGS  += -nographic  -machine virt  -m 128M -smp 2
 QEMU_BIOS = -bios default	  -kernel kernel-qemu
-QEMU_DEVICES = -device loader,file=os.bin,addr=0x80200000  
+QEMU_DEVICES = -device loader,file=kernel-qemu,addr=0x80200000  
 #./bootloader/fw_jump.bin
 run:
 	qemu-system-riscv64 $(QEMU_FLAGS) $(QEMU_BIOS) 

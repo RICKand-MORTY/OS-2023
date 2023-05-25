@@ -6,6 +6,8 @@
 
 //context in PCB
 #define CONTEXT_OFFSET              0 
+#define SCRAMBLE_OFFSET             156
+#define NEED_SCHEDULE_OFFSET        148
 
 #define TOTAL_TASK                  128
 #define THREAD_SIZE                 PAGE_SIZE
@@ -22,5 +24,8 @@
 #define THREAD                      1
 #define KERNEL_PROCESS              2
 #define KERNEL_THREAD               3
+
+//default time slice
+#define DEFAULT_SLICE               10
 
 #endif

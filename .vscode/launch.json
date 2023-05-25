@@ -1,0 +1,40 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "(gdb) 启动",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build and run",
+            "miDebuggerServerAddress": "localhost:1234",
+            "program": "${workspaceFolder}/kernel-qemu.elf",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            //"targetArchitecture": "",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/riscv/bin/riscv64-unknown-elf-gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set architecture riscv:rv64",
+                    "description": "set architecture riscv:rv64"
+                },
+                {
+                     "text": "symbol-file ${workspaceFolder}/kernel-qemu.elf",
+                     "description": "load symbol-file"
+                },
+            ],
+        }
+    ]
+}

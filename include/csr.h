@@ -57,4 +57,15 @@
 		:"memory"								\
 	);											\
 })
+
+
+void irq_disable(void)
+{
+	csr_clr(sstatus, SSTATUS_SIE);
+}
+
+void irq_enable(void)
+{
+	csr_set(sstatus, SSTATUS_SIE);
+}
 #endif
