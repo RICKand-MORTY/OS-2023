@@ -5,6 +5,7 @@
 #include "../../include/timer.h"
 #include "../../include/plic.h"
 #include <process.h>
+#include <syscall.h>
 
 #define SCAUSE_INT (1UL << 63)
 #define is_interrupt_fault(reg) (reg & (SCAUSE_INT))
@@ -97,8 +98,17 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 	} 
     else
     {
-        error_index = (scause&0xf);
-        do_trap_error(regs,error_msg[error_index]);
+		switch (scause)
+		{
+		case EXC_SYSCALL:
+			regs->sepc += 4;		//ECALL need to back to next instruction
+			syscall_handler(regs);
+			break;
+		default:
+			error_index = (scause&0xf);
+        	do_trap_error(regs,error_msg[error_index]);
+			break;
+		}
 	}
 }
 

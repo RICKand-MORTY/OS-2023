@@ -12,9 +12,16 @@
 
 .macro kernel_entry
 
-	addi sp, sp, -(PT_SIZE)
-	csrw sscratch, tp
+	csrrw tp, sscratch, tp
+	bnez tp, _save_user_sp
+_save_kernel_sp:
+	csrr tp, sscratch
+	sd sp, KERNEL_SP_OFFSET(tp)
+_save_user_sp:
+	sd sp, USER_SP_OFFSET(tp)
+	ld sp, KERNEL_SP_OFFSET(tp)
 
+	addi sp, sp, -(PT_SIZE)
 	sd x1,  PT_RA(sp)
 	sd x3,  PT_GP(sp)
 	sd x5,  PT_T0(sp)
@@ -45,6 +52,9 @@
 	sd x30, PT_T5(sp)
 	sd x31, PT_T6(sp)
 
+	ld s0, USER_SP_OFFSET(tp)
+	sd s0, PT_SP(sp)
+
 	csrr s1, sstatus
 	sd s1, PT_SSTATUS(sp)
 
@@ -60,8 +70,6 @@
 	csrr s5, sscratch
 	sd s5, PT_TP(sp)
 
-	addi s0, sp, PT_SIZE 
-	sd s0, PT_SP(sp)
 .endm
 
 .macro kernel_exit
@@ -160,6 +168,7 @@ ret_from_kernel_thread:
 .global do_exception_vector
 do_exception_vector:
     kernel_entry
+	csrw sscratch, x0
     la ra, ret_from_exception
     mv a0, sp
     mv a1, s4	//scause
@@ -170,6 +179,21 @@ ret_from_exception:
 	csrc sstatus, SSTATUS_SIE
 	andi s0, s0, SSTATUS_SPP		/*judge whether is S mode interrupt*/
 	bnez s0, ret_to_kernel
+
+ret_to_user:
+	lw s0, NEED_SCHEDULE_OFFSET(tp)
+	andi s0, s0, 1
+	bnez s0, need_schedule
+
+no_need_schedule:
+	addi s0, sp, PT_SIZE
+	sd s0, KERNEL_SP_OFFSET(tp)
+	csrw sscratch, tp
+	j restore_all
+
+need_schedule:
+	call schedule
+	j no_need_schedule
 
 ret_to_kernel:
 	/*judge whether can preempt or not*/
@@ -188,6 +212,12 @@ can_preempt:
 restore_all:
     kernel_exit
     sret
+
+.global ret_from_fork
+ret_from_fork:
+	/*back to U mode*/
+	la ra, ret_from_exception
+	tail schedule_tail
 
 .global enable_mmu
 enable_mmu:

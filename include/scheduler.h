@@ -4,10 +4,12 @@
 
 #include "page_table.h"
 
-//context in PCB
+//offset in PCB
 #define CONTEXT_OFFSET              0 
-#define SCRAMBLE_OFFSET             156
-#define NEED_SCHEDULE_OFFSET        148
+#define SCRAMBLE_OFFSET             172
+#define NEED_SCHEDULE_OFFSET        164
+#define KERNEL_SP_OFFSET            144
+#define USER_SP_OFFSET              152
 
 #define TOTAL_TASK                  128
 #define THREAD_SIZE                 PAGE_SIZE

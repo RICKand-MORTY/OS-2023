@@ -19,6 +19,11 @@
         "sched.h": "c",
         "scheduler.h": "c",
         "process.h": "c",
-        "linklist.h": "c"
+        "linklist.h": "c",
+        "pt_offset.h": "c",
+        "syscall.h": "c",
+        "user_syscall.h": "c",
+        "cstdio": "c",
+        "syscall_num.h": "c"
     }
 }

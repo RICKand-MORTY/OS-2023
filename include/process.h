@@ -19,10 +19,12 @@ typedef struct task_struct
     volatile long task_state;    
     unsigned long task_flags;
     struct list_head task_list;
-    int count;              //time slice 
-    int need_schedule;      //if need to scheduled
+    unsigned long kernel_sp;        //save S mode sp
+	unsigned long user_sp;          //save U mode sp
+    int count;                      //time slice 
+    int need_schedule;              //if need to scheduled
     int pid;
-    int scramble;           //if is scramble           
+    int scramble;                   //if is scramble           
     int priority;
     struct task_struct *next_task;
     struct task_struct *prev_task;
@@ -98,6 +100,7 @@ struct pt_regs *get_pt_reg(PCB *pcb);
 int do_fork(unsigned long clone_flags, unsigned long callback_fun, unsigned long arg);
 PCB* switch_to(PCB *prev,PCB *next);
 void sched_init(void);
-
-
+int create_user_place(unsigned long sepc);
+void start_user_thread(struct pt_regs *regs, unsigned long sepc, unsigned long sp);
+extern void ret_from_fork(void);
 #endif

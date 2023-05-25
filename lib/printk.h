@@ -27,5 +27,6 @@ int skip_atoi(const char **s);
 static char * number(char * str, long num, int base, int size, int precision,	int type);
 int vsprintf(char * buf,const char *fmt, va_list args);
 int printk(const char *fmt,...);
+int print_f(const char *fmt,...);
 
 #endif

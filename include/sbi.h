@@ -53,7 +53,7 @@
 #define sbi_shutdown()                                                      SBI_CALL_0(SBI_SHUTDOWN)
 #define sbi_set_timer(time)                                                 do {SBI_CALL_1(SBI_SET_TIMER, time);} while(0)
 #define sbi_putchar(s)                                                      do {SBI_CALL_1(SBI_CONSOLE_PUTCHAR, s);} while(0)
-#define sbi_remote_sfence_vma(hart_mask, start, size)                       SBI_CALL_3(SBI_REMOTE_SFENCE_VMA, hart_mask, start, size, 0)                               
+#define sbi_remote_sfence_vma(hart_mask, start, size)                       SBI_CALL_3(SBI_REMOTE_SFENCE_VMA, hart_mask, start, size)                               
 #define sbi_remote_SFENCE_VMA_with_ASID(hart_mask, start, size, asid)       SBI_CALL_4(SBI_REMOTE_SFENCE_VMA_WITH_ASID, hart_mask, start, size, asid)             
 
 

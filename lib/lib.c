@@ -1,5 +1,7 @@
 #include "lib.h"
 
+typedef unsigned int size_t;
+
 int strlen(const char* s)
 {
     int count = 0;
@@ -17,4 +19,17 @@ void memset(void* addr, int val, unsigned int size)
         *a = val;
         a++;
     }
+}
+
+void *memcpy(void *dest, const void *src, size_t count)
+{
+	char *tmp = dest;
+	const char *s = src;
+	while (count--)
+	{
+        *tmp = *s;
+        tmp++;
+        s++;
+    }
+	return dest;
 }

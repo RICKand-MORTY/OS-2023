@@ -2,6 +2,9 @@
 #define _TRAP_H
 
 
+//syscall
+#define EXC_SYSCALL		8
+
 //CLINT register (unmapped)
 #define CLINT_ADDR	0x2000000
 #define CLINT_TIMER_CMP (CLINT_ADDR + 0x4000)

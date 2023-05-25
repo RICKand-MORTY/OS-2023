@@ -1,5 +1,5 @@
 #include "./printk.h"
-//#include "../kernel/urat.c"
+#include <uart.h>
 #include "lib.h"
 #include "../include/sbi.h"
 /*
@@ -278,5 +278,16 @@ int printk(const char *fmt,...)
     num=vsprintf(buf,fmt,args);
     va_end(args);
     sbi_putstr(buf);
+    return num;
+}
+
+int print_f(const char *fmt,...)
+{
+    int num=0;
+    va_list args;
+    va_start(args,fmt);
+    num=vsprintf(buf,fmt,args);
+    va_end(args);
+    uart_send_string(buf);
     return num;
 }

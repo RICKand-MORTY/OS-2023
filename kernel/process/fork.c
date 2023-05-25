@@ -4,6 +4,7 @@
 #include <trap.h>
 #include <memory.h>
 #include "../../lib/printk.h"
+#include "../../lib/lib.h"
 
 #define __init_task_data __attribute__((__section__(".data.init_task")))
 
@@ -54,6 +55,14 @@ static int copy_thread(unsigned long clone_flags, PCB *pcb,
         pcb->context.reg[1] = arg;
         pcb->context.ra = (unsigned long)ret_from_kernel_thread;
     }
+    else
+    {
+        *pt_reg = *get_pt_reg(get_current_task());
+		pt_reg->a0 = 0;     //sub process return 0 from fork
+		if (callback_fun)
+			pt_reg->sp = callback_fun;
+		pcb->context.ra = (unsigned long)ret_from_fork;
+    }
     pcb->context.sp = (unsigned long)pt_reg;
     return 0;
 }
@@ -98,4 +107,27 @@ PCB* switch_to(PCB *prev,PCB *next)
         return NULL;
     }
 	return cpu_switch_to(prev, next);
+}
+
+void start_user_thread(struct pt_regs *regs, unsigned long sepc, unsigned long sp)
+{  
+    memset((void *)regs, 0, sizeof(struct pt_regs));
+    regs->sepc = sepc;
+    regs->sp = sp;
+    regs->sstatus = read_csr(sstatus) & ~SSTATUS_SPP;
+    printk("sstatus 0x%lx sp 0x%lx  pc 0x%lx\n", regs->sstatus, regs->sp, regs->sepc);
+}
+
+int create_user_place(unsigned long sepc)
+{
+    struct pt_regs *regs = get_pt_reg(get_current_task());
+	unsigned long stack = page_alloc();
+    if(stack == 1)
+    {
+        printk("create user place fail! no enough pages for stack!\n");
+        return 1;
+    }
+    memset((void *)stack, 0, PAGE_SIZE);
+    start_user_thread(regs, sepc, stack + PAGE_SIZE);
+    return 0;
 }
