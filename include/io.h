@@ -2,7 +2,7 @@
 #define _P_IO_H
 
 #define __arch_getword(a)			(*(volatile unsigned int *)(a))
-#define __arch_putword(v,a)		(*(volatile unsigned int *)(a) = (v))
+#define __arch_putword(v,a)		(*((volatile unsigned int *)(a)) = (v))
 
 #define __arch_getbyte(a)			(*(volatile unsigned char *)(a))
 #define __arch_putbyte(v,a)		(*(volatile unsigned char *)(a) = (v))

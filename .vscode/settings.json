@@ -24,6 +24,10 @@
         "syscall.h": "c",
         "user_syscall.h": "c",
         "cstdio": "c",
-        "syscall_num.h": "c"
+        "syscall_num.h": "c",
+        "driver.h": "c",
+        "cstdint": "cpp",
+        "random": "c",
+        "virtio.h": "c"
     }
 }

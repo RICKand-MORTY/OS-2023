@@ -6,7 +6,7 @@
 #define EXC_SYSCALL		8
 
 //CLINT register (unmapped)
-#define CLINT_ADDR	0x2000000
+#define CLINT_ADDR	     0x2000000UL
 #define CLINT_TIMER_CMP (CLINT_ADDR + 0x4000)
 #define CLINT_TIMER_VAL (CLINT_ADDR + 0xbff8)
 
@@ -15,6 +15,7 @@
 #define S_INTERRUPT_CAUSE_TIMER 5
 #define S_INTERRUPT_CAUSE_EXTERNAL 9
 
+#define VIRTIO0_IRQ 48
 /*store registers when exception happened*/
 struct pt_regs {
 	unsigned long sepc;
@@ -57,7 +58,7 @@ struct pt_regs {
 
 
 void trap_init(void);
-static void do_trap_error(struct pt_regs *regs, const char *str);
+void do_trap_error(struct pt_regs *regs, const char *str);
 void show_regs(struct pt_regs *regs);
 void do_exception(struct pt_regs *regs, unsigned long scause);
 void stack_trace(void);

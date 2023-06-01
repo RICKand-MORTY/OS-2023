@@ -49,10 +49,10 @@ struct sched_class {
 	const struct sched_class *next;     //point to next sched_class
 
 	void (*task_fork)(struct task_struct *p);       //initial process method
-	void (*enqueue_task)(struct run_queue *rq, struct task_struct *p);  //add in ready queue
-	void (*dequeue_task)(struct run_queue *rq, struct task_struct *p);  //dequeue from ready queue
-	void (*task_tick)(struct run_queue *rq, struct task_struct *p);     //time interrupt
-	struct task_struct * (*pick_next_task)(struct run_queue *rq,        //choose next process
+	void (*enqueue_task)(struct ready_queue *rq, struct task_struct *p);  //add in ready queue
+	void (*dequeue_task)(struct ready_queue *rq, struct task_struct *p);  //dequeue from ready queue
+	void (*task_tick)(struct ready_queue *rq, struct task_struct *p);     //time interrupt
+	struct task_struct * (*pick_next_task)(struct ready_queue *rq,        //choose next process
 			struct task_struct *prev);
 };
 

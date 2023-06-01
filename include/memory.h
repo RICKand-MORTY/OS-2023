@@ -3,6 +3,7 @@
 
 
 #include "page_table.h"
+#include <trap.h>
 
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
@@ -15,7 +16,6 @@ extern char _pgd_page_begin[], _pgd_page_end[];
 #define TOTAL_PAGES         (TOTAL_MEM / PAGE_SIZE)
 #define ADDR_END            (RAM_ADDR + TOTAL_MEM)
 
-#define CLINT_ADDR	     0x2000000UL
 #define UART_ADDR        0x10000000UL
 #define CLINT_SIZE	     0x10000UL
 #define UART_SIZE        4096

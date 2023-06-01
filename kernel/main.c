@@ -11,6 +11,7 @@
 #include <spinlock.h>
 #include <process.h>
 #include <syscall.h>
+#include <virtio.h>
 #include "../usr/user_syscall.h"
 
 extern char _bss_begin[], _bss_end[];
@@ -26,7 +27,7 @@ typedef struct sbiret {
 
 spinlock print_lock = {.lock = 0};
 
-void user_thread_1()
+int user_thread_1(void *arg)
 {
     while (1)
     {
@@ -35,7 +36,7 @@ void user_thread_1()
     }
 }
 
-void user_main()
+int user_main()
 {
 	unsigned long child_stack;
 	int ret;
@@ -67,7 +68,7 @@ void user_main()
 	print("clone done, 0x%llx 0x%llx\n", &user_thread_1, child_stack + PAGE_SIZE);
 	while (1) {
 		sleep(1000);
-		print("%s: %llu\n", __func__, i++);
+		print("%s: %lu\n", __func__, i++);
 	}
 
 	return 0;
@@ -75,7 +76,7 @@ void user_main()
 
 void user_initial(void)
 {
-	if(create_user_place(user_main))
+	if(create_user_place((unsigned long)&user_main))
 	{
 		printk("error to create user place");
 	}
@@ -139,7 +140,13 @@ void kernel_main(void)
 	printk("KERNEL_SP_OFFSET=%ld\n",( (unsigned long)&p.kernel_sp - (unsigned long) &p));
 	printk("USER_SP_OFFSET=%ld\n",( (unsigned long)&p.user_sp -  (unsigned long)&p));
 	printk("CONTEXT_OFFSET=%ld\n",( (unsigned long)&p.context -  (unsigned long)&p));
-	int pid = do_fork(KERNEL_THREAD, user_initial, 0);
-	switch_to(get_current_task(), g_task[pid]);
-
+	//int pid = do_fork(KERNEL_THREAD, user_initial, 0);
+	//switch_to(get_current_task(), g_task[pid]);
+	printk("virtio_regs size = %d\n",sizeof(virtio_regs));
+	irq_enable();
+	virtio_init();
+	unsigned char buff[512];
+	//virtio_rw(1, &buff, VIRTIO_BLK_T_IN);
+	virtio_blk_rw(VIRTIO_BLK_T_IN, 1, buff);
+	while(1);
 }

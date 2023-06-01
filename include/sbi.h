@@ -12,7 +12,7 @@
     __asm__ volatile (                                                          \
         "ecall"                                                                 \
         :"+r"(a0)                                                               \
-        :"r"(a1), "r"(a2), "r"(a3), "r"(a7)                                     \   
+        :"r"(a1), "r"(a2), "r"(a3), "r"(a7)                                     \
         :"memory"                                                               \
     );                                                                          \
     a0;                                                                         \
@@ -29,7 +29,7 @@
     __asm__ volatile (                                                          \
         "ecall"                                                                 \
         :"+r"(a0)                                                               \
-        :"r"(a1), "r"(a2), "r"(a3), "r"(a7), "r"(a6)                            \   
+        :"r"(a1), "r"(a2), "r"(a3), "r"(a7), "r"(a6)                            \
         :"memory"                                                               \
     );                                                                          \
     a0;                                                                         \
@@ -57,7 +57,7 @@
 #define sbi_remote_SFENCE_VMA_with_ASID(hart_mask, start, size, asid)       SBI_CALL_4(SBI_REMOTE_SFENCE_VMA_WITH_ASID, hart_mask, start, size, asid)             
 
 
-static inline void sbi_putstr(char *str)
+void sbi_putstr(char *str)
 {
     int i=0;
     for(i=0;str[i]!='\0';i++)

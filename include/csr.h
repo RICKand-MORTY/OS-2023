@@ -35,7 +35,7 @@
 		:										\
 		:"memory"								\
 	);											\
-	_res;										\	
+	_res;										\
 })
 
 #define csr_set(csr,val)						\

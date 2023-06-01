@@ -42,7 +42,7 @@ void trap_init(void)
 }
 
 //define error process function
-static void do_trap_error(struct pt_regs *regs, const char *str)
+void do_trap_error(struct pt_regs *regs, const char *str)
 {
 	printk("ERROR HAPPENED! cause:%s\n", str);
 	show_regs(regs);
@@ -88,6 +88,9 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 	   		case S_INTERRUPT_CAUSE_TIMER:
 				handle_timer();
 				break;
+			case VIRTIO0_IRQ:
+				printk("virtio device interrupt!\n");
+				break;
 			case S_INTERRUPT_CAUSE_EXTERNAL:
 				handle_plic_irq(regs);
 				break;
@@ -103,6 +106,9 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 		case EXC_SYSCALL:
 			regs->sepc += 4;		//ECALL need to back to next instruction
 			syscall_handler(regs);
+			break;
+		case VIRTIO0_IRQ:
+			printk("virtio device interrupt!\n");
 			break;
 		default:
 			error_index = (scause&0xf);
