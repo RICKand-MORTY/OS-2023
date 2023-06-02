@@ -40,7 +40,7 @@ void vring_init(struct vring *vr, unsigned int num, void *p) {
     vr->used = (void *)(((unsigned long)&vr->avail->ring[num] + sizeof(__virtio16) + 4095) & ~4095);
 }
 
-/*// a function to perform a read or write operation on the virtio device
+// a function to perform a read or write operation on the virtio device
 int virtio_rw(uint64_t sector, uint8_t *buffer, int write) {
     // select the queue 0
     g_regs->QueueSel = 0;
@@ -138,7 +138,7 @@ int virtio_rw(uint64_t sector, uint8_t *buffer, int write) {
 	printk("request sent!\n");
 	return 0; // success
 }
-*/
+
 
 
 int virtio_blk_rw(uint32_t type, uint32_t sector, uint8_t *data)
@@ -368,7 +368,7 @@ static int virtio_blk_init_nonlegacy(virtio_regs *regs, uint32_t intid)
 //initial device
 static int virtio_dev_init(uint64_t virt, uint64_t intid)
 {
-    virtio_regs *regs = (virtio_regs*)virt;
+    virtio_regs_legacy *regs = (virtio_regs*)virt;
     if (readword(&regs->MagicValue) != VIRTIO_MAGIC) {
 		printk("error: virtio at 0x%x had wrong magic value 0x%x,expected 0x%x\n",virt, regs->MagicValue, VIRTIO_MAGIC);
 		return -1;
@@ -402,7 +402,7 @@ static int virtio_dev_init(uint64_t virt, uint64_t intid)
     switch (readword(&regs->DeviceID))
     {
     case VIRTIO_DEV_BLK:
-        virtio_blk_init_nonlegacy(regs, intid);
+        virtio_blk_init_legacy(regs, intid);
         break;
     default:
         printk("not support this device! DeviceID = %d",readword(&regs->DeviceID));

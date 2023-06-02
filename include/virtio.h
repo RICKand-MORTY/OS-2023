@@ -166,7 +166,7 @@ typedef volatile struct {
 	__virtio32 Config[0];
 }virtio_regs_legacy;
 
-virtio_regs *g_regs;
+virtio_regs_legacy *g_regs;
 
 //from qemu-7.0.0
 /* Virtio ring descriptors: 16 bytes. These can chain together via "next". */
