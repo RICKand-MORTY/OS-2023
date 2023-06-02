@@ -373,7 +373,7 @@ static int virtio_dev_init(uint64_t virt, uint64_t intid)
 		printk("error: virtio at 0x%x had wrong magic value 0x%x,expected 0x%x\n",virt, regs->MagicValue, VIRTIO_MAGIC);
 		return -1;
 	}
-	if (readword(&regs->Version) != 2) {
+	if (readword(&regs->Version) != 1) {
 		printk("error: virtio at 0x%x had wrong version 0x%x, expected 0x%x\n",virt, regs->Version, VIRTIO_VERSION_LEGACY);
 		return -1;
 	}

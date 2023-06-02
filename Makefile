@@ -80,7 +80,8 @@ kernel-qemu: $(SRC_DIR)/linker.ld $(OBJ_FILES) $(LIB_DIR)/*.a
 ######################run qemu#########################################
 QEMU_FLAGS  = -nographic  -machine virt  -m 128M -smp 2
 QEMU_BIOS = -bios default	  -kernel kernel-qemu
-QEMU_DEVICES = -drive file=sdcard.img,if=none,format=raw,id=x0  -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -global virtio-mmio.force-legacy=false
+QEMU_DIVICE = -global virtio-mmio.force-legacy=false
+QEMU_DEVICES = -drive file=sdcard.img,if=none,format=raw,id=x0  -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 
 QEMU_DUMP_DEVICE_TREE = -machine dumpdtb=qemu-virt.dtb
 #./bootloader/fw_jump.bin
 run:
