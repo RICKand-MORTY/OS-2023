@@ -159,6 +159,6 @@ void kernel_main(void)
 	virtio_init();
 	unsigned char buff[512];
 	//virtio_rw(1, &buff, VIRTIO_BLK_T_IN);
-	virtio_rw(VIRTIO_BLK_T_IN, 1, buff);
+	virtio_rw(VIRTIO_BLK_T_IN, buff,1);
 	while(1);
 }

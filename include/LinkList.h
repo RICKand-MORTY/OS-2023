@@ -44,6 +44,7 @@ void list_add(PLinkList head, PLinkList new, int flag)
     if(flag == ADD_TAIL)
     {
         list_add_tail(new, tail);
+        head->prev = new;
     }
     else if(flag == ADD_BEFORE)
     {
@@ -51,7 +52,7 @@ void list_add(PLinkList head, PLinkList new, int flag)
     }
 }
 
-void list_delete_node(PLinkList prev, PLinkList next, PLinkList node)
+void list_delete_node(PLinkList prev, PLinkList next)
 {
     prev->next = next;
     next->prev = prev;

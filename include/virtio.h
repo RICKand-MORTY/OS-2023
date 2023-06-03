@@ -21,7 +21,7 @@
 
 // device feature bits
 #define VIRTIO_BLK_F_RO              5	/* Disk is read-only */
-#define VIRTIO_BLK_F_SCSI            7	/* Supports scsi command passthru */
+//#define VIRTIO_BLK_F_SCSI            7	/* Supports scsi command passthru */
 #define VIRTIO_BLK_F_CONFIG_WCE     11	/* Writeback mode available in config */
 #define VIRTIO_BLK_F_MQ             12	/* support more than one vq */
 #define VIRTIO_F_ANY_LAYOUT         27

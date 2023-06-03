@@ -5,7 +5,7 @@
 void dequeue_task_simple(struct ready_queue *rq, PCB* task)
 {
     rq->task_num--;
-    list_delete_node(task->task_list.prev, task->task_list.next, &task->task_list);
+    list_delete_node(task->task_list.prev, task->task_list.next);
 }
 
 void enqueue_task_simple(struct ready_queue *rq, PCB* task)
