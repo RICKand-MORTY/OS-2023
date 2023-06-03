@@ -28,6 +28,7 @@
         "driver.h": "c",
         "cstdint": "cpp",
         "random": "c",
-        "virtio.h": "c"
+        "virtio.h": "c",
+        "sleeplock.h": "c"
     }
 }

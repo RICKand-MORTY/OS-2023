@@ -10,6 +10,7 @@ SRC_EXP_DIR = $(SRC_DIR)/trap
 SRC_MEM_DIR = $(SRC_DIR)/memory
 SRC_PRO_DIR = $(SRC_DIR)/process
 SRC_DRIVER_DIR = $(SRC_DIR)/driver
+SRC_FS_DIR = $(SRC_DIR)/fs
 
 BUILD_LIB_DIR = $(BUILD_ROOT)/lib
 BUILD_EXP_DIR = $(BUILD_ROOT)/trap
@@ -17,12 +18,16 @@ BUILD_MEM_DIR = $(BUILD_ROOT)/memory
 BUILD_PRO_DIR = $(BUILD_ROOT)/process
 BUILD_USR_DIR = $(BUILD_ROOT)/usr
 BUILD_DRIVER_DIR = $(BUILD_ROOT)/driver
+BUILD_FS_DIR = $(BUILD_ROOT)/fs
 
 all : clean kernel-qemu
 
 clean :
 	rm -rf $(BUILD_ROOT)  *.bin  *.map *.elf
 	rm -rf kernel-qemu
+
+$(BUILD_FS_DIR)/%_c.o: $(SRC_FS_DIR)/%.c
+	mkdir -p $(BUILD_FS_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
 
 $(BUILD_DRIVER_DIR)/%_c.o: $(SRC_DRIVER_DIR)/%.c
 	mkdir -p $(BUILD_DRIVER_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
@@ -58,6 +63,8 @@ SRC_EXP_FILES = $(wildcard $(SRC_EXP_DIR)/*.c)
 SRC_MEM_FILES = $(wildcard $(SRC_MEM_DIR)/*.c)
 SRC_PRO_FILES = $(wildcard $(SRC_PRO_DIR)/*.c)
 SRC_DRIVER_FILES = $(wildcard $(SRC_DRIVER_DIR)/*.c)
+SRC_FS_FILES = $(wildcard $(SRC_FS_DIR)/*.c)
+
 USR_C_FILES = $(wildcard $(USR_DIR)/*.c)
 USR_A_FILES = $(wildcard $(USR_DIR)/*.S)
 
@@ -68,6 +75,8 @@ OBJ_FILES += $(SRC_EXP_FILES:$(SRC_EXP_DIR)/%.c=$(BUILD_EXP_DIR)/%_c.o)
 OBJ_FILES += $(SRC_MEM_FILES:$(SRC_MEM_DIR)/%.c=$(BUILD_MEM_DIR)/%_c.o)
 OBJ_FILES += $(SRC_PRO_FILES:$(SRC_PRO_DIR)/%.c=$(BUILD_PRO_DIR)/%_c.o)
 OBJ_FILES += $(SRC_DRIVER_FILES:$(SRC_DRIVER_DIR)/%.c=$(BUILD_DRIVER_DIR)/%_c.o)
+OBJ_FILES += $(SRC_FS_FILES:$(SRC_FS_DIR)/%.c=$(BUILD_FS_DIR)/%_c.o)
+
 OBJ_FILES += $(USR_C_FILES:$(USR_DIR)/%.c=$(BUILD_USR_DIR)/%_c.o)
 OBJ_FILES += $(USR_A_FILES:$(USR_DIR)/%.S=$(BUILD_USR_DIR)/%_s.o)
 

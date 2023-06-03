@@ -16,8 +16,8 @@ typedef struct _cpu_context
 typedef struct task_struct
 {
     cpu_context context; 
-    volatile long task_state;    
-    unsigned long task_flags;
+    volatile long task_state;       //type of state
+    unsigned long task_flags;       //type of process
     struct list_head task_list;
     unsigned long kernel_sp;        //save S mode sp
 	unsigned long user_sp;          //save U mode sp
@@ -103,4 +103,6 @@ void sched_init(void);
 int create_user_place(unsigned long sepc);
 void start_user_thread(struct pt_regs *regs, unsigned long sepc, unsigned long sp);
 extern void ret_from_fork(void);
+void sleep(int pid);
+void wakeup(int pid);
 #endif

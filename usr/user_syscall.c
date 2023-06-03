@@ -21,7 +21,7 @@ _u64 internal_syscall(long n, _u64 _a0, _u64 _a1, _u64 _a2, _u64
 	return a0;
 }
 
-unsigned long sleep(int time)
+unsigned long sleep_proc(int time)
 {
 	return SYSCALL_1(SYS_nanosleep, time);
 }

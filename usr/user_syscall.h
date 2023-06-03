@@ -14,7 +14,7 @@ typedef unsigned long _u64;
 
 _u64 internal_syscall(long n, _u64 _a0, _u64 _a1, _u64 _a2, _u64
 		_a3, _u64 _a4, _u64 _a5);
-unsigned long sleep(int time);
+unsigned long sleep_proc(int time);
 unsigned long print(const char *fmt,...);
 extern int __clone(int (*fn)(void *arg), void *child_stack,
 		int flags, void *arg);

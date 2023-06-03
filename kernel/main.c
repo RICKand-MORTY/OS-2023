@@ -8,9 +8,9 @@
 #include "../include/plic.h"
 #include "../lib/lib.h"
 #include <memory.h>
-#include <spinlock.h>
 #include <process.h>
 #include <syscall.h>
+#include <sleeplock.h>
 #include <virtio.h>
 #include "../usr/user_syscall.h"
 
@@ -24,7 +24,7 @@ typedef struct sbiret {
   long value;
 }error;
 
-
+sleeplock slock;
 spinlock print_lock = {.lock = 0};
 
 int user_thread_1(void *arg)
@@ -110,6 +110,15 @@ void user_thread_3()
     }
 }
 
+void kernel_thread()
+{
+	while(1)
+	{
+		delay(1000);
+		printk("this is kernel thread!\n");
+	}
+}
+
 void kernel_main(void)
 {
 	uart_init();
@@ -140,6 +149,9 @@ void kernel_main(void)
 	printk("KERNEL_SP_OFFSET=%ld\n",( (unsigned long)&p.kernel_sp - (unsigned long) &p));
 	printk("USER_SP_OFFSET=%ld\n",( (unsigned long)&p.user_sp -  (unsigned long)&p));
 	printk("CONTEXT_OFFSET=%ld\n",( (unsigned long)&p.context -  (unsigned long)&p));
+	init_sleeplock(&slock,NULL);
+	//int pid = do_fork(KERNEL_THREAD, kernel_thread, 0);
+	//switch_to(get_current_task(), g_task[pid]);
 	//int pid = do_fork(KERNEL_THREAD, user_initial, 0);
 	//switch_to(get_current_task(), g_task[pid]);
 	printk("virtio_regs size = %d\n",sizeof(virtio_regs));

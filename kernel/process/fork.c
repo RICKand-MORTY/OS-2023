@@ -131,3 +131,16 @@ int create_user_place(unsigned long sepc)
     start_user_thread(regs, sepc, stack + PAGE_SIZE);
     return 0;
 }
+
+void sleep(int pid)
+{
+    PCB *pcb = g_task[pid];
+    pcb->task_state = TASK_INTERRUPTIBLE;
+    schedule();
+    return pcb; 
+}
+
+void wakeup(int pid)
+{
+    g_task[pid]->task_state = TASK_RUNNING;
+}
