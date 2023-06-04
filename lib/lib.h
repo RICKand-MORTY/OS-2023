@@ -4,5 +4,6 @@
 
 int strlen(const char* s);
 void memset(void* addr, int val, unsigned int size);
+void* memmove(void *dst, const void *src, unsigned int n);
 
 #endif

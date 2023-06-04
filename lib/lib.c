@@ -33,3 +33,23 @@ void *memcpy(void *dest, const void *src, size_t count)
     }
 	return dest;
 }
+
+// Copy n bytes from src to dst.
+// The memory areas may overlap.
+void* memmove(void *dst, const void *src, unsigned int n)
+{
+  const char *s = src;
+  char *d = dst;
+
+  if (s < d && s + n > d) { // 如果源地址小于目标地址，并且有重叠，就从后往前复制
+    s += n;
+    d += n;
+    while (n-- > 0)
+      *--d = *--s;
+  } else { // 否则就从前往后复制
+    while (n-- > 0)
+      *d++ = *s++;
+  }
+
+  return dst;
+}

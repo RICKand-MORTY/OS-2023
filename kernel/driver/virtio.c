@@ -46,13 +46,6 @@ int virtio_rw(uint64_t sector, uint8_t *buffer, int write) {
     g_regs->QueueSel = 0;
     // get the queue size
     unsigned int qsize = g_regs->QueueNum;
-    if (qsize == 0) {
-        printk("Queue size is zero\n");
-        return -1;
-    }
-    if (qsize > QUEUE_SIZE) {
-        qsize = QUEUE_SIZE; // we only use QUEUE_SIZE descriptors
-    }
     
 	// allocate memory for the request structure and the vring
 	struct virtio_blk_req *req = vring_alloc(sizeof(struct virtio_blk_req));
@@ -91,47 +84,11 @@ int virtio_rw(uint64_t sector, uint8_t *buffer, int write) {
 	// notify the device by writing the queue index to QueueNotify register
 	g_regs->QueueNotify = 0;
 	
-	// wait for the device to process the request by checking the InterruptStatus register and the used index
 
-    // add a timeout mechanism to avoid dead loop
-    int timeout = 0;    // set timeout to 10 seconds
-
-	while (!(g_regs->InterruptStatus & 1) && vr.used->idx == 0) {
-        if (timeout == 10000) {
-            printk("Request timed out\n");
-            return -1;
-        }
-        timeout++;
-    }
 	
 	// acknowledge the interrupt by writing 1 to InterruptACK register
 	g_regs->InterruptACK = g_regs->InterruptStatus;
-	
-	// check the status of the request by reading the status byte
-	if (req->status != 0) {
-		printk("Request failed with status %d\n", req->status);
-		return -1;
-	}
     
-    // check the used ring for errors or unexpected lengths
-    struct vring_used_elem *used_elem = &vr.used->ring[vr.used->idx % qsize];
-    if (used_elem->id != 0) {
-        printk("Unexpected used element id %d\n", used_elem->id);
-        return -1;
-    }
-    if (used_elem->len != req->desc[0].len + req->desc[1].len + req->desc[2].len) {
-        printk("Unexpected used element length %d\n", used_elem->len);
-        return -1;
-    }
-    if (vr.used->flags & VIRTQ_USED_F_NO_NOTIFY) {
-        printk("Device requests no interrupts\n");
-        return -1;
-    }
-    if (vr.used->flags & VIRTQ_USED_F_INDIRECT) {
-        printk("Device uses indirect descriptors\n");
-        return -1;
-    }
-	
 	// free the memory allocated for the request and the vring
 	//free(req);
 	//free(vr.desc);
@@ -181,11 +138,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     /*4.Read device feature bits, and write the subset of feature bits understood by the OS and driver to the
     device. During this step the driver MAY read (but MUST NOT write) the device-specific configuration
     fields to check that it can support the device before accepting it.*/
-    refresh_cache();
-    writeword(0, &regs->HostFeaturesSel);
-    refresh_cache();
-    uint32_t features = readword(&regs->HostFeatures);
-    refresh_cache();
+    uint32_t features = readword(&g_regs->HostFeatures);
     features &= ~(1 << VIRTIO_BLK_F_RO);
     features &= ~(1 << VIRTIO_BLK_F_SCSI);
     features &= ~(1 << VIRTIO_BLK_F_CONFIG_WCE);
@@ -193,23 +146,24 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     features &= ~(1 << VIRTIO_F_ANY_LAYOUT);
     features &= ~(1 << VIRTIO_RING_F_EVENT_IDX);
     features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
+    writeword(features, &g_regs->GuestFeatures);
     refresh_cache();
-    writeword(0, &regs->GuestFeatures);
-    refresh_cache();
-    writeword(features, &regs->GuestFeatures);
-    refresh_cache();
-    
-
 
     writeword(readword(&regs->Status)|VIRTIO_STATUS_FEATURES_OK , &regs->Status);
     refresh_cache();
+
+    //Set the DRIVER_OK status bit. At this point the device is “live”.
+    writeword((readword(&regs->Status) | VIRTIO_STATUS_DRIVER_OK), &regs->Status);
+    refresh_cache();
+
+    writeword(PAGE_SIZE, &regs->GuestPageSize);
+    refresh_cache();
     /*
-    7. Perform device-specific setup, including discovery of virtqueues for the device, optional per-bus setup,
+    Perform device-specific setup, including discovery of virtqueues for the device, optional per-bus setup,
     reading and possibly writing the device’s virtio configuration space, and population of virtqueues.
     */
     //configure the queue:
     //a. Select the queue writing its index (first queue is 0) to QueueSel(init queue)
-    refresh_cache();
     writeword(0, &regs->QueueSel);
     refresh_cache();
     //b. Check if the queue is not already in use: read QueuePFN, expecting a returned value of zero (0x0).
@@ -222,9 +176,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     c. Read maximum queue size (number of elements) from QueueNumMax. If the returned value is zero
     (0x0) the queue is not available.
     */
-   refresh_cache();
     uint32_t size = readword(&regs->QueueNumMax);
-    refresh_cache();
     if(size == 0)
     {
         printk("device queue not available!\n");
@@ -236,39 +188,29 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
         return -1;
     }
 
+    writeword(QUEUE_SIZE, &regs->QueueNum);
+    refresh_cache();
     /*if((readword(&regs->HostFeatures) & VIRTIO_F_VERSION_1) == 0)
     {
         printk("Device does not support virtio 1.0 %x\n", regs->HostFeatures);
 		return -1;
     }*/
     /*
-    d. Allocate and zero the queue pages in contiguous virtual memory,
+     Allocate and zero the queue pages in contiguous virtual memory,
     aligning the Used Ring to an optimal boundary (usually page size). 
     The driver should choose a queue size smaller than or equal to
     */
     g_vring.avail = alloc_pgtable();
-    g_vring.desc = alloc_pgtable();
-    g_vring.used = PAGE_ALIGN_UP(alloc_pgtable());
+    alloc_pgtable();
+    g_vring.desc = g_vring.avail + QUEUE_SIZE * sizeof(struct vring_avail);
+    g_vring.used = g_vring.avail + PAGE_SIZE;
     if(g_vring.avail == 1 || g_vring.desc == 1 || g_vring.used == 1)
     {
         printk("not enough for g_vring!\n");
         return -1;
     }
     g_vring.num = QUEUE_SIZE;
-    refresh_cache();
-    //e. Notify the device about the queue size by writing the size to QueueNum.
-    writeword(QUEUE_SIZE, &regs->QueueNum);
-    refresh_cache();
-    printk("regs->QueueNum = 0x%x",(unsigned long)(&regs->QueueNum)-(unsigned long)(regs));
-    //f. Notify the device about the used alignment by writing its value in bytes to QueueAlign.
-    writeword(PAGE_SIZE, &regs->QueueAlign);
-    refresh_cache();
-    //g. Write the physical number of the first page of the queue to the QueuePFN register
-    writeword(g_vring.desc, &regs->QueuePFN);
-    refresh_cache();
-
-    //8. Set the DRIVER_OK status bit. At this point the device is “live”.
-    writeword((readword(&regs->Status) | VIRTIO_STATUS_DRIVER_OK), &regs->Status);
+    writeword((uint64_t)g_vring.avail >> PAGE_SHIFT, &regs->QueuePFN);
     refresh_cache();
     printk("virtio device init finish!\n");
     g_regs = regs;
@@ -365,6 +307,7 @@ static int virtio_blk_init_nonlegacy(virtio_regs *regs, uint32_t intid)
     return 0;
 }
 
+
 //initial device
 static int virtio_dev_init(uint64_t virt, uint64_t intid)
 {
@@ -390,8 +333,8 @@ static int virtio_dev_init(uint64_t virt, uint64_t intid)
     }
 
     //1.reset device
-    writeword(0, &regs->Status);
-    refresh_cache();
+    //writeword(0, &regs->Status);
+    //refresh_cache();
     //2.Set the ACKNOWLEDGE status bit: the guest OS has noticed the device.
     writeword(readword(&regs->Status) | VIRTIO_STATUS_ACKNOWLEDGE, &regs->Status);
     refresh_cache();
@@ -402,6 +345,7 @@ static int virtio_dev_init(uint64_t virt, uint64_t intid)
     switch (readword(&regs->DeviceID))
     {
     case VIRTIO_DEV_BLK:
+        g_regs = regs;
         virtio_blk_init_legacy(regs, intid);
         break;
     default:

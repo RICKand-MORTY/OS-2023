@@ -23,8 +23,6 @@ typedef struct sbiret {
   long error;
   long value;
 }error;
-
-sleeplock slock;
 spinlock print_lock = {.lock = 0};
 
 int user_thread_1(void *arg)
@@ -149,7 +147,6 @@ void kernel_main(void)
 	printk("KERNEL_SP_OFFSET=%ld\n",( (unsigned long)&p.kernel_sp - (unsigned long) &p));
 	printk("USER_SP_OFFSET=%ld\n",( (unsigned long)&p.user_sp -  (unsigned long)&p));
 	printk("CONTEXT_OFFSET=%ld\n",( (unsigned long)&p.context -  (unsigned long)&p));
-	init_sleeplock(&slock,NULL);
 	//int pid = do_fork(KERNEL_THREAD, kernel_thread, 0);
 	//switch_to(get_current_task(), g_task[pid]);
 	//int pid = do_fork(KERNEL_THREAD, user_initial, 0);
@@ -158,7 +155,11 @@ void kernel_main(void)
 	irq_enable();
 	virtio_init();
 	unsigned char buff[512];
-	//virtio_rw(1, &buff, VIRTIO_BLK_T_IN);
-	virtio_rw(VIRTIO_BLK_T_IN, buff,1);
+	virtio_rw(1, &buff, VIRTIO_BLK_T_IN);
+	delay(1000);
+	for(int i=0;i<512;i++)
+	{
+		printk("%c ",buff[i]);
+	}
 	while(1);
 }

@@ -42,7 +42,7 @@
 #define VIRTIO_BLK_T_SECURE_ERASE 			14
 
 //vring
-#define QUEUE_SIZE				1024
+#define QUEUE_SIZE				8
 //desc flags
 /* This marks a buffer as continuing via the next field. */
 #define VIRTQ_DESC_F_NEXT 		1
@@ -101,72 +101,72 @@ typedef unsigned long long uint64_t;
 
 //virtio_mmio device
 typedef volatile struct {
-	uint32_t MagicValue;
-	uint32_t Version;
-	uint32_t DeviceID;
-	uint32_t VendorID;
-	uint32_t DeviceFeatures;
-	uint32_t DeviceFeaturesSel;
-	uint32_t _reserved0[2];
-	uint32_t DriverFeatures;
-	uint32_t DriverFeaturesSel;
-	uint32_t _reserved1[2];
-	uint32_t QueueSel;
-	uint32_t QueueNumMax;
-	uint32_t QueueNum;
-	uint32_t _reserved2[2];
-	uint32_t QueueReady;
-	uint32_t _reserved3[2];
-	uint32_t QueueNotify;
-	uint32_t _reserved4[3];
-	uint32_t InterruptStatus;
-	uint32_t InterruptACK;
-	uint32_t _reserved5[2];
-	uint32_t Status;
-	uint32_t _reserved6[3];
-	uint32_t QueueDescLow;
-	uint32_t QueueDescHigh;
-	uint32_t _reserved7[2];
-	uint32_t QueueAvailLow;
-	uint32_t QueueAvailHigh;
-	uint32_t _reserved8[2];
-	uint32_t QueueUsedLow;
-	uint32_t QueueUsedHigh;
-	uint32_t _reserved9[21];
-	uint32_t ConfigGeneration;
-	uint32_t Config[0];
+volatile	uint32_t MagicValue;
+volatile	uint32_t Version;
+volatile	uint32_t DeviceID;
+volatile	uint32_t VendorID;
+volatile	uint32_t DeviceFeatures;
+volatile	uint32_t DeviceFeaturesSel;
+volatile	uint32_t _reserved0[2];
+volatile	uint32_t DriverFeatures;
+volatile	uint32_t DriverFeaturesSel;
+volatile	uint32_t _reserved1[2];
+volatile	uint32_t QueueSel;
+volatile	uint32_t QueueNumMax;
+volatile	uint32_t QueueNum;
+volatile	uint32_t _reserved2[2];
+volatile	uint32_t QueueReady;
+volatile	uint32_t _reserved3[2];
+volatile	uint32_t QueueNotify;
+volatile	uint32_t _reserved4[3];
+volatile	uint32_t InterruptStatus;
+volatile	uint32_t InterruptACK;
+volatile	uint32_t _reserved5[2];
+volatile	uint32_t Status;
+volatile	uint32_t _reserved6[3];
+volatile	uint32_t QueueDescLow;
+volatile	uint32_t QueueDescHigh;
+volatile	uint32_t _reserved7[2];
+volatile	uint32_t QueueAvailLow;
+volatile	uint32_t QueueAvailHigh;
+volatile	uint32_t _reserved8[2];
+volatile	uint32_t QueueUsedLow;
+volatile	uint32_t QueueUsedHigh;
+volatile	uint32_t _reserved9[21];
+volatile	uint32_t ConfigGeneration;
+volatile	uint32_t Config[0];
 } virtio_regs;
 
 //legacy device
-typedef volatile struct {
-	__virtio32 MagicValue;
-	__virtio32 Version;
-	__virtio32 DeviceID;
-	__virtio32 VendorID;
-    __virtio32 HostFeatures;
-    __virtio32 HostFeaturesSel;
-    __virtio32 _reserved0[2];
-    __virtio32 GuestFeatures;
-    __virtio32 GuestFeaturesSel;
-    __virtio32 GuestPageSize;
-    __virtio32 _reserved1[1];
-    __virtio32 QueueSel;
-    __virtio32 QueueNumMax;
-    __virtio32 QueueNum;
-    __virtio32 QueueAlign;
-    __virtio32 QueuePFN;
-	__virtio32 _reserved2[3];
-    __virtio32 QueueNotify;
-    __virtio32 _reserved3[3];
-    __virtio32 InterruptStatus;
-    __virtio32 InterruptACK;
-    __virtio32 _reserved4[2];
-    __virtio32 Status;
-    __virtio32 _reserved5[35];
-	__virtio32 Config[0];
+typedef volatile struct  __attribute__ ((aligned(4))){
+volatile	__virtio32 MagicValue;
+volatile	__virtio32 Version;
+volatile	__virtio32 DeviceID;
+volatile	__virtio32 VendorID;
+volatile    __virtio32 HostFeatures;
+volatile    __virtio32 HostFeaturesSel;
+volatile    __virtio32 _reserved0[2];
+volatile    __virtio32 GuestFeatures;
+volatile    __virtio32 GuestFeaturesSel;
+volatile    __virtio32 GuestPageSize;
+volatile    __virtio32 _reserved1[1];
+volatile    __virtio32 QueueSel;
+volatile    __virtio32 QueueNumMax;
+volatile    __virtio32 QueueNum;
+volatile    __virtio32 QueueAlign;
+volatile    __virtio32 QueuePFN;
+volatile	__virtio32 _reserved2[3];
+volatile    __virtio32 QueueNotify;
+volatile    __virtio32 _reserved3[3];
+volatile    __virtio32 InterruptStatus;
+volatile    __virtio32 InterruptACK;
+volatile    __virtio32 _reserved4[2];
+volatile    __virtio32 Status;
+volatile    __virtio32 _reserved5[35];
+volatile	__virtio32 Config[0];
 }virtio_regs_legacy;
 
-virtio_regs_legacy *g_regs;
+volatile virtio_regs_legacy *g_regs;
 
 //from qemu-7.0.0
 /* Virtio ring descriptors: 16 bytes. These can chain together via "next". */
