@@ -1,5 +1,5 @@
 GNU := riscv64-unknown-elf
-COPS = -g -O0 -Wall -nostdlib -march=rv64imac_zicsr -mabi=lp64 -I include -mcmodel=medany -fno-PIE -fomit-frame-pointer -Wno-builtin-declaration-mismatch -ggdb -g
+COPS = -g -O0 -Wall -nostdlib -march=rv64imac -mabi=lp64 -I include -mcmodel=medany -fno-PIE -fomit-frame-pointer -Wno-builtin-declaration-mismatch -ggdb -g
 BUILD_ROOT= build
 BUILD_DIR = $(BUILD_ROOT)/os
 SRC_DIR = kernel
