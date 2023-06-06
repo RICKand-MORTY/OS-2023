@@ -1,11 +1,12 @@
 #ifndef _LOG_H
 #define _LOG_H
 
-
+#include<fs.h>
 #include "spinlock.h"
 
-#define LOGSIZE     30     //log maximum size of blocks
+#define LOGSIZE     30      //log maximum size of blocks
 #define BSIZE       1024    //block size
+#define MAXBLOCKS   10      //maximum blocks of log in an operation(syscall)
 
 struct logheader {
   int n;  //日志块的数量
@@ -24,4 +25,6 @@ struct log {
   struct logheader lh;
 };
 
+void begin_add_log(void);
+int initlog(int dev, superblock_p sb);
 #endif

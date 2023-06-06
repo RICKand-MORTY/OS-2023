@@ -29,6 +29,9 @@
         "cstdint": "cpp",
         "random": "c",
         "virtio.h": "c",
-        "sleeplock.h": "c"
+        "sleeplock.h": "c",
+        "buf.h": "c",
+        "fs.h": "c",
+        "log.h": "c"
     }
 }

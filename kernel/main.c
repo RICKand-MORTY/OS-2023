@@ -141,7 +141,7 @@ void kernel_main(void)
 	//int pid2 = do_fork(KERNEL_THREAD, thread_2, NULL);
 	//int pid3 = do_fork(KERNEL_THREAD, thread_3, NULL);
 	//switch_to(get_current_task(),g_task[pid1]);
-	PCB p;
+	//PCB p;
 	//int pid = do_fork(KERNEL_THREAD, kernel_thread, 0);
 	//switch_to(get_current_task(), g_task[pid]);
 	//int pid = do_fork(KERNEL_THREAD, user_initial, 0);

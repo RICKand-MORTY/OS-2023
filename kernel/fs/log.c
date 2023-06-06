@@ -1,7 +1,6 @@
 #include<log.h>
-#include<spinlock.h>
-#include<fs.h>
 #include<buf.h>
+#include<process.h>
 
 struct log log;
 
@@ -84,7 +83,15 @@ void begin_add_log(void)
   spin_lock(&log.snlock);
   while (1)
   {
-
+    if(log.committing || log.lh.n + (log.outstanding+1)* LOGSIZE > LOGSIZE)
+    {
+      sleep(get_current_task()->pid);
+    }
+    else
+    {
+      log.outstanding += 1;
+      spin_unlock(&log.snlock);
+      break;
+    }
   }
-  
 }
