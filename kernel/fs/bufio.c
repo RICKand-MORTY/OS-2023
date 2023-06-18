@@ -16,15 +16,16 @@ struct {
 
 void binit(void)
 {
+    memset(&bcache, 0, sizeof(bcache));
     spin_init(&bcache.lock);
     list_init(&bcache.head);
-    memset(&bcache, 0, sizeof(bcache));
     for(int i = 0; i < NUMBUF; i++)
     {
-        list_add(&bcache.head, &bcache.buf[i].list, ADD_TAIL);
+        list_add_tail(&bcache.buf[i].list, &bcache.head);
         init_sleeplock(&bcache.buf[i].splock, "bache");
     }
 }
+
 
 static Buf* bget(unsigned int dev, unsigned int blockno)
 {
@@ -35,7 +36,8 @@ static Buf* bget(unsigned int dev, unsigned int blockno)
     //find if the block is cached
     for( ; p != &bcache.head; p = p->next)
     {
-        b = container_of(p, Buf, list);
+        PLinkList tmp = p;
+        b = container_of(tmp, Buf, list);
         if(b->dev == dev && b->blockno == blockno)
         {
             b->refcnt++;
@@ -49,7 +51,8 @@ static Buf* bget(unsigned int dev, unsigned int blockno)
     p = &bcache.head.prev;
     for( ; p != &bcache.head; p = p->prev)
     {
-        b = container_of(p, Buf, list);
+        PLinkList tmp = p;
+        b = container_of(tmp, Buf, list);
         if(b->refcnt == 0)
         {
             b->dev = dev;
@@ -70,7 +73,7 @@ Buf* bread(unsigned int dev, unsigned int blockno)
     Buf* b = bget(dev, blockno);
     if(!b->valid)
     {
-        virtio_rw(blockno / 512, b, VIRTIO_BLK_T_IN);   //need rewrite
+        virtio_disk_rw(b, 0);
         b->valid = 1;
     }
     return b;
@@ -83,7 +86,7 @@ void bwrite(Buf *b)
   {
     printk("No locked!\n");
   }
-  virtio_rw(0, b, VIRTIO_BLK_T_OUT);    //need rewrite
+  virtio_disk_rw(b, 1);
 }
 
 // Release a locked buffer.

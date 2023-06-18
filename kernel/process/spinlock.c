@@ -25,7 +25,7 @@ void spin_lock(spinlock_P lock)
         :"a2", "a3", "memory"
     );
     csr_set(sie, SIE_SEIE);     //enable extern interrupt
-    printk("%d\n",lock->lock);
+    //printk("%d\n",lock->lock);
 }
 
 //release spinlock

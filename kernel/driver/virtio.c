@@ -1,135 +1,174 @@
 #include <virtio.h>
 #include <memory.h>
 #include <io.h>
+#include "../../lib/lib.h"
 
 #define VIRTIO_BLK_REQ_HEADER_SIZE      16       //desc1 header
 #define VIRTIO_BLK_REQ_MIDDLE_SIZE      512      //desc2 data
 #define VIRTIO_BLK_REQ_FOOTER_SIZE      1        //desc3 status
 struct vring g_vring;
 
-// a function to allocate memory for the vring
-void *vring_alloc(uint32_t size) {
-    // align the size to 4096 bytes
-    size = (size + 4095) & ~4095;
-    // allocate memory using allo_page() function
-    void *ptr = alloc_pgtable(); // for example
-    if (!ptr) {
-        printk("Memory allocation failed\n");
-        return NULL;
-    }
-    // zero out the memory
-    memset(ptr, 0, size);
-    return ptr;
-}
+//reference from xv6
+static struct disk {
+	char pages[2*PAGE_SIZE];    //desc,avail,used save in
 
-// a function to calculate the size of vring memory
-uint32_t vring_size(unsigned int num, unsigned long align) {
-    uint32_t size = num * sizeof(struct vring_desc);
-    size += sizeof(__virtio16) * (3 + num);
-    size = (size + align - 1) & ~(align - 1);
-    size += sizeof(__virtio16) * 3 + sizeof(struct vring_used_elem) * num;
-    return size;
-}
+    // a set (not a ring) of DMA descriptors, with which the
+    // driver tells the device where to read and write individual
+    // disk operations. there are NUM descriptors.
+    // most commands consist of a "chain" (a linked list) of a couple of
+    // these descriptors.
+    struct vring_desc *desc;
 
+    // a ring in which the driver writes descriptor numbers
+    // that the driver would like the device to process.  it only
+    // includes the head descriptor of each chain. the ring has
+    // NUM elements.
+    struct vring_avail *avail;
 
-// a function to initialize the vring
-void vring_init(struct vring *vr, unsigned int num, void *p) {
-    vr->num = num;
-    vr->desc = p;
-    vr->avail = p + num * sizeof(struct vring_desc);
-    vr->used = (void *)(((unsigned long)&vr->avail->ring[num] + sizeof(__virtio16) + 4095) & ~4095);
-}
+    // a ring in which the device writes descriptor numbers that
+    // the device has finished processing (just the head of each chain).
+    // there are NUM used ring entries.
+    struct vring_used *used;
 
-// a function to perform a read or write operation on the virtio device
-int virtio_rw(uint64_t sector, uint8_t *buffer, int write) {
-    // select the queue 0
-    g_regs->QueueSel = 0;
-    // get the queue size
-    unsigned int qsize = g_regs->QueueNum;
+    // our own book-keeping.
+    char free[QUEUE_SIZE];  // is a descriptor free?
+    __virtio16 used_idx; //表示驱动已经查看过的已用环中的元素数量，用于判断是否有新的完成通知
+
+    //表示每个请求链表的相关信息，包括请求对应的缓冲区指针和状态标志
+    struct {
+        struct buf *b;
+        char status;
+    } info[QUEUE_SIZE];
+
+    //表示每个请求链表对应的磁盘命令头部，与描述符一一对应，方便驱动构造和解析请求
+    struct virtio_blk_req ops[QUEUE_SIZE];
     
-	// allocate memory for the request structure and the vring
-	struct virtio_blk_req *req = vring_alloc(sizeof(struct virtio_blk_req));
-	struct vring vr;
-	vring_init(&vr, qsize, vring_alloc(vring_size(qsize, g_regs->QueueAlign)));
-	
-	// set up the request header
-	req->type = write ? VIRTIO_BLK_T_OUT : VIRTIO_BLK_T_IN;
-	req->reverse = 0;
-	req->sector = sector;
+    spinlock vdisk_lock;
+  
+} disk;
 
-	// set up the descriptor table
-	req->desc[0].addr = (uint64_t)&req->type; // header address
-	req->desc[0].len = sizeof(req->type) + sizeof(req->reverse) + sizeof(req->sector); // header length
-	req->desc[0].flags = VIRTQ_DESC_F_NEXT; // next descriptor follows
-	req->desc[0].next = 1; // next descriptor index
-	
-	req->desc[1].addr = (uint64_t)buffer; // data buffer address
-	req->desc[1].len = 512; // data buffer length
-	req->desc[1].flags = VIRTQ_DESC_F_NEXT | (write ? VIRTQ_DESC_F_WRITE : 0); // next descriptor follows and write flag depends on operation type
-	req->desc[1].next = 2; // next descriptor index
-	
-	req->desc[2].addr = (uint64_t)&req->status; // status address
-	req->desc[2].len = sizeof(req->status); // status length
-	req->desc[2].flags = VIRTQ_DESC_F_WRITE; // write flag set
-	req->desc[2].next = 0; // no next descriptor
-	
-	// set up the avail ring
-	vr.avail->flags = 0; // no flags set
-	vr.avail->idx = 1; // one available descriptor chain
-	vr.avail->ring[0] = 0; // index of the first descriptor
-	
-	// tell the device the queue address by writing the physical page number to QueuePFN register
-	g_regs->QueuePFN = (uint32_t)((unsigned long)vr.desc >> g_regs->GuestPageSize);
-	
-	// notify the device by writing the queue index to QueueNotify register
-	g_regs->QueueNotify = 0;
-	
-
-	
-	// acknowledge the interrupt by writing 1 to InterruptACK register
-	g_regs->InterruptACK = g_regs->InterruptStatus;
-    
-	// free the memory allocated for the request and the vring
-	//free(req);
-	//free(vr.desc);
-	printk("request sent!\n");
-	return 0; // success
-}
-
-
-
-int virtio_blk_rw(uint32_t type, uint32_t sector, uint8_t *data)
+//find a free desc
+static int alloc_desc()
 {
-    uint32_t mode = 0;
-    req.reverse = 0;
-    req.type = type;
-    req.sector = sector;
-    if(type == VIRTIO_BLK_T_IN)
-    {
-        mode = VIRTQ_DESC_F_WRITE;
+  for(int i = 0; i < QUEUE_SIZE; i++){
+    if(disk.free[i]){
+      disk.free[i] = 0;
+      return i;
     }
-    req.desc[0].addr = alloc_pgtable();
-    req.desc[0].len = VIRTIO_BLK_REQ_HEADER_SIZE;
-    req.desc[0].flags = VIRTQ_DESC_F_NEXT;
-    req.desc[1].addr = data;
-    req.desc[1].flags = mode | VIRTQ_DESC_F_NEXT;
-    req.desc[1].len = VIRTIO_BLK_REQ_MIDDLE_SIZE;
-    req.desc[2].addr = alloc_pgtable();
-    req.desc[2].len = VIRTIO_BLK_REQ_FOOTER_SIZE;
-    req.desc[2].flags = VIRTQ_DESC_F_WRITE;
+  }
+  return -1;
+}
 
-    req.desc[0].next = 1;
-    req.desc[1].next = 2;
+//free a desc
+static void
+free_desc(int i)
+{
+  disk.desc[i].addr = 0;
+  disk.desc[i].len = 0;
+  disk.desc[i].flags = 0;
+  disk.desc[i].next = 0;
+  disk.free[i] = 1;
+}
 
-    req.avail.ring[req.avail.idx] = 0;
+// free a chain of descriptors.
+static void free_chain(int i)
+{
+  while(1){
+    int flag = disk.desc[i].flags;
+    int nxt = disk.desc[i].next;
+    free_desc(i);
+    if(flag & VIRTQ_DESC_F_NEXT)
+      i = nxt;
+    else
+      break;
+  }
+}
+
+static int alloc3_desc(int *idx)
+{
+  for(int i = 0; i < 3; i++){
+    idx[i] = alloc_desc();
+    if(idx[i] < 0){
+      for(int j = 0; j < i; j++)
+        free_desc(idx[j]);
+      return -1;
+    }
+  }
+  return 0;
+}
+
+void virtio_disk_rw(Buf *b, int write)
+{
+    uint64_t sector = b->blockno * (BSIZE / 512);
+    spin_lock(&disk.vdisk_lock);
+    
+    // allocate the three descriptors.
+    int idx[3];
+    while(1)
+    {
+        if(alloc3_desc(idx) == 0) {
+        break;
+        }
+    }
+
+    struct virtio_blk_req *buf0 = &disk.ops[idx[0]];
+
+    if(write)
+        buf0->type = VIRTIO_BLK_T_OUT; // write the disk
+    else
+        buf0->type = VIRTIO_BLK_T_IN; // read the disk
+    buf0->reverse = 0;
+    buf0->sector = sector;
+
+    /*
+    构造包含三个描述符的链
+    第一个是sizeof(struct virtio_blk_req)个字节长，包含type, reserved, 和sector。该描述符是只读的。
+    第二个是BSIZE字节长，指向一个完全不同的内存地址（data传递给函数）,用于存放数据。该描述符是设备可写的。
+    第三个是1字节长，指向结构的末尾virtio_blk_req ，设备可以在此处写入状态信息。
+    */
+
+    //idx0
+    disk.desc[idx[0]].addr = (__virtio64)buf0;
+    disk.desc[idx[0]].len = sizeof(struct virtio_blk_req);
+    disk.desc[idx[0]].flags = VIRTQ_DESC_F_NEXT;
+    disk.desc[idx[0]].next = idx[1];
+    
+    //idx1
+    disk.desc[idx[1]].addr = (__virtio64) b->data;
+    disk.desc[idx[1]].len = BSIZE;
+    if(write)
+        disk.desc[idx[1]].flags = 0; // device reads b->data
+    else
+        disk.desc[idx[1]].flags = VIRTQ_DESC_F_WRITE; // device writes b->data
+    disk.desc[idx[1]].flags |= VIRTQ_DESC_F_NEXT;
+    disk.desc[idx[1]].next = idx[2];
+
+    //idx2
+    disk.info[idx[0]].status = 0xff; // device writes 0 on success
+    disk.desc[idx[2]].addr = (__virtio64) &disk.info[idx[0]].status;
+    disk.desc[idx[2]].len = 1;
+    disk.desc[idx[2]].flags = VIRTQ_DESC_F_WRITE; // device writes the status
+    disk.desc[idx[2]].next = 0;
+
+    b->disk = 1;
+    disk.info[idx[0]].b = b;    //specify the buf
+    
+    disk.avail->ring[disk.avail->idx % QUEUE_SIZE] = idx[0];    //use % because is a circular
     refresh_cache();
-    req.avail.idx += 1;
+
+    // tell the device another avail ring entry is available.
+    disk.avail->idx += 1;
     refresh_cache();
+
     writeword(0, &g_regs->QueueNotify);
     refresh_cache();
-    printk("request sent!\n");
-    return 0;
+
+    disk.info[idx[0]].b = 0;
+    free_chain(idx[0]);
+
 }
+
+
 
 
 static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
@@ -158,6 +197,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
 
     writeword(PAGE_SIZE, &regs->GuestPageSize);
     refresh_cache();
+
     /*
     Perform device-specific setup, including discovery of virtqueues for the device, optional per-bus setup,
     reading and possibly writing the device’s virtio configuration space, and population of virtqueues.
@@ -166,6 +206,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     //a. Select the queue writing its index (first queue is 0) to QueueSel(init queue)
     writeword(0, &regs->QueueSel);
     refresh_cache();
+
     //b. Check if the queue is not already in use: read QueuePFN, expecting a returned value of zero (0x0).
     if(readword(&regs->QueuePFN))
     {
@@ -190,28 +231,25 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
 
     writeword(QUEUE_SIZE, &regs->QueueNum);
     refresh_cache();
-    /*if((readword(&regs->HostFeatures) & VIRTIO_F_VERSION_1) == 0)
-    {
-        printk("Device does not support virtio 1.0 %x\n", regs->HostFeatures);
-		return -1;
-    }*/
+
+    memset(disk.pages, 0, sizeof(disk.pages));
+    writeword(((u64)disk.pages) >> PAGE_SHIFT, &regs->QueuePFN);
+    refresh_cache();
+
     /*
      Allocate and zero the queue pages in contiguous virtual memory,
     aligning the Used Ring to an optimal boundary (usually page size). 
     The driver should choose a queue size smaller than or equal to
     */
-    g_vring.avail = alloc_pgtable();
-    alloc_pgtable();
-    g_vring.desc = g_vring.avail + QUEUE_SIZE * sizeof(struct vring_avail);
-    g_vring.used = g_vring.avail + PAGE_SIZE;
-    if(g_vring.avail == 1 || g_vring.desc == 1 || g_vring.used == 1)
+    disk.desc = (struct vring_desc*)disk.pages;
+    disk.avail = (__virtio16*)(((char*)disk.desc) + QUEUE_SIZE*sizeof(struct vring_desc));
+    disk.used = (struct vring_used*)(disk.pages + PAGE_SIZE);
+    
+    for(int i = 0; i < QUEUE_SIZE; i++)
     {
-        printk("not enough for g_vring!\n");
-        return -1;
+        disk.free[i] = 1;
     }
-    g_vring.num = QUEUE_SIZE;
-    writeword((uint64_t)g_vring.avail >> PAGE_SHIFT, &regs->QueuePFN);
-    refresh_cache();
+
     printk("virtio device init finish!\n");
     g_regs = regs;
     return 0;
@@ -366,6 +404,6 @@ void virtio_init()
     //create_pgd_mapping((pgd_page*)virt_page,0x10001000,virt_page,(PAGE_SIZE*12), PAGE_KERNEL, alloc_pgtable, 0); 
     //refresh_cache();
     printk("0x%x",(*(volatile unsigned int*)virt_page));*/
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 1; i++)
     	virtio_dev_init(0x10001000 + VIRTIO_REGS_SIZE * i, 32 + 0x10 + i);
 }

@@ -149,12 +149,8 @@ void kernel_main(void)
 	printk("virtio_regs size = %d\n",sizeof(virtio_regs));
 	irq_enable();
 	virtio_init();
-	unsigned char buff[512];
-	virtio_rw(1, &buff, VIRTIO_BLK_T_IN);
-	delay(1000);
-	for(int i=0;i<512;i++)
-	{
-		printk("%c ",buff[i]);
-	}
+	binit();
+	Buf *bb;
+	bb=bread(0, 1);
 	while(1);
 }

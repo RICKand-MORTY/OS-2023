@@ -15,7 +15,7 @@
 #define S_INTERRUPT_CAUSE_TIMER 5
 #define S_INTERRUPT_CAUSE_EXTERNAL 9
 
-#define VIRTIO0_IRQ 48
+#define VIRTIO0_IRQ 1
 /*store registers when exception happened*/
 struct pt_regs {
 	unsigned long sepc;
