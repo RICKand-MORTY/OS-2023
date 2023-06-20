@@ -144,7 +144,7 @@ void virtio_disk_rw(Buf *b, int write)
     disk.desc[idx[1]].next = idx[2];
 
     //idx2
-    disk.info[idx[0]].status = 0xff; // device writes 0 on success
+    disk.info[idx[0]].status = 0; // device writes 0 on success
     disk.desc[idx[2]].addr = (__virtio64) &disk.info[idx[0]].status;
     disk.desc[idx[2]].len = 1;
     disk.desc[idx[2]].flags = VIRTQ_DESC_F_WRITE; // device writes the status
@@ -154,20 +154,46 @@ void virtio_disk_rw(Buf *b, int write)
     disk.info[idx[0]].b = b;    //specify the buf
     
     disk.avail->ring[disk.avail->idx % QUEUE_SIZE] = idx[0];    //use % because is a circular
-    refresh_cache();
+    __sync_synchronize();
 
     // tell the device another avail ring entry is available.
     disk.avail->idx += 1;
-    refresh_cache();
+    __sync_synchronize();
 
     writeword(0, &g_regs->QueueNotify);
-    refresh_cache();
+    __sync_synchronize();
+
+    while(b->disk == 1)
+    {
+        //printk("waiting!\n");
+    }
 
     disk.info[idx[0]].b = 0;
     free_chain(idx[0]);
 
 }
 
+void virtio_disk_intr()
+{
+    //ack interrupt
+    writeword(readword(&g_regs->InterruptStatus) & 0x3, &g_regs->InterruptACK);
+    __sync_synchronize();
+
+    // the device increments disk.used->idx when it
+    // adds an entry to the used ring.
+    while(disk.used_idx != disk.used->idx)
+    {
+        __sync_synchronize();
+        int id = disk.used->ring[disk.used_idx % QUEUE_SIZE].id;
+
+        if(disk.info[id].status != 0)
+        printk("virtio_disk_intr status");
+
+        struct buf *b = disk.info[id].b;
+        b->disk = 0;   // disk is done with buf
+        disk.used_idx += 1;
+    }
+}
 
 
 
@@ -177,7 +203,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     /*4.Read device feature bits, and write the subset of feature bits understood by the OS and driver to the
     device. During this step the driver MAY read (but MUST NOT write) the device-specific configuration
     fields to check that it can support the device before accepting it.*/
-    uint32_t features = readword(&g_regs->HostFeatures);
+    uint64_t features = readword(&g_regs->HostFeatures);
     features &= ~(1 << VIRTIO_BLK_F_RO);
     features &= ~(1 << VIRTIO_BLK_F_SCSI);
     features &= ~(1 << VIRTIO_BLK_F_CONFIG_WCE);
@@ -404,6 +430,6 @@ void virtio_init()
     //create_pgd_mapping((pgd_page*)virt_page,0x10001000,virt_page,(PAGE_SIZE*12), PAGE_KERNEL, alloc_pgtable, 0); 
     //refresh_cache();
     printk("0x%x",(*(volatile unsigned int*)virt_page));*/
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 5; i++)
     	virtio_dev_init(0x10001000 + VIRTIO_REGS_SIZE * i, 32 + 0x10 + i);
 }

@@ -90,6 +90,7 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 				break;
 			case VIRTIO0_IRQ:
 				printk("virtio device interrupt!\n");
+				virtio_disk_intr();
 				break;
 			case S_INTERRUPT_CAUSE_EXTERNAL:
 				handle_plic_irq(regs);
@@ -106,9 +107,6 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 		case EXC_SYSCALL:
 			regs->sepc += 4;		//ECALL need to back to next instruction
 			syscall_handler(regs);
-			break;
-		case VIRTIO0_IRQ:
-			printk("virtio device interrupt!\n");
 			break;
 		default:
 			error_index = (scause&0xf);

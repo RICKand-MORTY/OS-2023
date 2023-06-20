@@ -48,7 +48,7 @@ static Buf* bget(unsigned int dev, unsigned int blockno)
     }
 
     //if not cached
-    p = &bcache.head.prev;
+    p = bcache.head.prev;
     for( ; p != &bcache.head; p = p->prev)
     {
         PLinkList tmp = p;

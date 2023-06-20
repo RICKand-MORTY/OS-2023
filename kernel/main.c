@@ -150,7 +150,10 @@ void kernel_main(void)
 	irq_enable();
 	virtio_init();
 	binit();
-	Buf *bb;
-	bb=bread(0, 1);
-	while(1);
+	Buf *bb = bread(0,5);
+	refresh_cache();
+	while(1)
+	{
+		
+	}
 }

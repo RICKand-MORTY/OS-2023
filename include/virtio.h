@@ -207,5 +207,6 @@ struct virtio_blk_req {
 extern struct vring g_vring;
 void virtio_init();
 void virtio_disk_rw(Buf *b, int write);
+void virtio_disk_intr();
 //int virtio_rw(uint64_t sector, uint8_t *buffer, int write);
 #endif
