@@ -40,5 +40,5 @@ void spin_unlock(spinlock_P lock)
         :"memory"
     );
     csr_set(sie, SIE_SEIE);
-    printk("%d\n",lock->lock);
+    //printk("%d\n",lock->lock);
 }

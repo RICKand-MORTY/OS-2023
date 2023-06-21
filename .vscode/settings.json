@@ -32,6 +32,7 @@
         "sleeplock.h": "c",
         "buf.h": "c",
         "fs.h": "c",
-        "log.h": "c"
+        "log.h": "c",
+        "test.h": "c"
     }
 }

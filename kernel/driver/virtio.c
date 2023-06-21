@@ -10,7 +10,7 @@ struct vring g_vring;
 
 //reference from xv6
 static struct disk {
-	char pages[2*PAGE_SIZE];    //desc,avail,used save in
+	char pages[3*PAGE_SIZE];    //desc,avail,used save in
 
     // a set (not a ring) of DMA descriptors, with which the
     // driver tells the device where to read and write individual
@@ -128,6 +128,7 @@ void virtio_disk_rw(Buf *b, int write)
     */
 
     //idx0
+    create_pgd_mapping(_pgd_page_begin,(u64)buf0,(u64)buf0,sizeof(struct virtio_blk_req), PAGE_KERNEL_READ_EXEC, alloc_pgtable, 0 );
     disk.desc[idx[0]].addr = (__virtio64)buf0;
     disk.desc[idx[0]].len = sizeof(struct virtio_blk_req);
     disk.desc[idx[0]].flags = VIRTQ_DESC_F_NEXT;
@@ -165,8 +166,10 @@ void virtio_disk_rw(Buf *b, int write)
 
     while(b->disk == 1)
     {
-        //printk("waiting!\n");
+        printk("waiting!\n");
+        __sync_synchronize(); // ensure memory barrier before checking b->disk
     }
+
 
     disk.info[idx[0]].b = 0;
     free_chain(idx[0]);
@@ -220,8 +223,9 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     //Set the DRIVER_OK status bit. At this point the device is “live”.
     writeword((readword(&regs->Status) | VIRTIO_STATUS_DRIVER_OK), &regs->Status);
     refresh_cache();
-
+    
     writeword(PAGE_SIZE, &regs->GuestPageSize);
+    //printk("GuestPageSize = 0x%x\n", ((unsigned long)&regs->GuestPageSize - (unsigned long)regs));
     refresh_cache();
 
     /*
@@ -231,6 +235,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     //configure the queue:
     //a. Select the queue writing its index (first queue is 0) to QueueSel(init queue)
     writeword(0, &regs->QueueSel);
+    //printk("regs->QueueSel = 0x%x\n", ((unsigned long)&regs->QueueSel - (unsigned long)regs));
     refresh_cache();
 
     //b. Check if the queue is not already in use: read QueuePFN, expecting a returned value of zero (0x0).
@@ -267,9 +272,9 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     aligning the Used Ring to an optimal boundary (usually page size). 
     The driver should choose a queue size smaller than or equal to
     */
-    disk.desc = (struct vring_desc*)disk.pages;
-    disk.avail = (__virtio16*)(((char*)disk.desc) + QUEUE_SIZE*sizeof(struct vring_desc));
-    disk.used = (struct vring_used*)(disk.pages + PAGE_SIZE);
+    disk.desc = (struct vring_desc*)((unsigned long)disk.pages);
+    disk.avail = (struct vring_avail*)(((char*)disk.desc) + QUEUE_SIZE*sizeof(struct vring_desc));
+    disk.used = (struct vring_used*)PAGE_ALIGN_UP((unsigned long)(disk.pages + PAGE_SIZE));
     
     for(int i = 0; i < QUEUE_SIZE; i++)
     {
@@ -397,8 +402,8 @@ static int virtio_dev_init(uint64_t virt, uint64_t intid)
     }
 
     //1.reset device
-    //writeword(0, &regs->Status);
-    //refresh_cache();
+    writeword(0, &regs->Status);
+    refresh_cache();
     //2.Set the ACKNOWLEDGE status bit: the guest OS has noticed the device.
     writeword(readword(&regs->Status) | VIRTIO_STATUS_ACKNOWLEDGE, &regs->Status);
     refresh_cache();
@@ -430,6 +435,6 @@ void virtio_init()
     //create_pgd_mapping((pgd_page*)virt_page,0x10001000,virt_page,(PAGE_SIZE*12), PAGE_KERNEL, alloc_pgtable, 0); 
     //refresh_cache();
     printk("0x%x",(*(volatile unsigned int*)virt_page));*/
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 1; i++)
     	virtio_dev_init(0x10001000 + VIRTIO_REGS_SIZE * i, 32 + 0x10 + i);
 }

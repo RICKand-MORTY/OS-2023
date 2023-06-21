@@ -154,6 +154,9 @@ void kernel_main(void)
 	refresh_cache();
 	while(1)
 	{
-		
+		for(int i=0; i<512; i++)
+		{
+			printk("%c ", bb->data[i]);
+		}
 	}
 }
