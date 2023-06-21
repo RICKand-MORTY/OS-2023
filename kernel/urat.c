@@ -56,3 +56,8 @@ void enable_uart_irq()
 {
 	plic_switch_irq(0, UART0_IRQ_NUM, 1);
 }
+
+void enable_virtio_irq()
+{
+	plic_switch_irq(0, VIRTIO0_IRQ, 1);
+}

@@ -189,15 +189,7 @@ struct virtio_blk_req {
     // header
     __virtio32 type; // VIRTIO_BLK_T_IN for read
     __virtio32 reverse; 
-    __virtio64 sector; // sector number
-	uint8_t data[512];
-	uint8_t status;
-    // descriptor table
-    struct vring_desc desc[3];
-    // avail ring
-    struct vring_avail avail;
-    // used ring
-    struct vring_used used;    
+    __virtio64 sector; // sector number 
     } req;
 
 

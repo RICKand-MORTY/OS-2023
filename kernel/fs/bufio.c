@@ -65,6 +65,7 @@ static Buf* bget(unsigned int dev, unsigned int blockno)
         }
     }
     printk("error: No Buf!\n");
+    spin_unlock(&bcache.lock);
 }
 
 // Return a locked buf with the contents of the indicated block.
@@ -102,8 +103,12 @@ void brelease(Buf* b)
     b->refcnt--;
     if(!b->refcnt)
     {
-        list_delete_node(&b->list.prev, &b->list.next);
-        list_add(&bcache.head, &b->list, ADD_TAIL);
+        b->list.next->prev = b->list.prev;
+        b->list.prev->next = b->list.next;
+        b->list.next = bcache.head.next;
+        b->list.prev = &bcache.head;
+        bcache.head.next->prev = &b->list;
+        bcache.head.next = &b->list;
     }
     spin_unlock(&bcache.lock);
 }

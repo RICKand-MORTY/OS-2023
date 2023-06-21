@@ -43,6 +43,15 @@ void handle_plic_irq(struct pt_regs *regs)
         {
             handle_uart_irq();
         }
+        else if(irq_num == VIRTIO0_IRQ)
+        {
+			printk("virtio device interrupt!\n");
+			virtio_disk_intr();
+        }
+        else
+        {
+            printk("unknowen irq:%d",irq_num);
+        }
         writeword(irq_num, reg);
     }
     csr_set(sie, SIE_SEIE);

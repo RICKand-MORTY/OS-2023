@@ -127,6 +127,7 @@ void kernel_main(void)
 	plic_init();
 	printk("plic_init finish \n");
 	enable_uart_irq();
+	enable_virtio_irq();
 	printk("uart irq enable! \n");
 	mem_init((unsigned long)_bss_end, ADDR_END);
 	printk("ready to init_mmu!!!!!!!!!!!!\n");
@@ -150,13 +151,20 @@ void kernel_main(void)
 	irq_enable();
 	virtio_init();
 	binit();
-	Buf *bb = bread(0,5);
-	refresh_cache();
-	while(1)
+	Buf *bb = NULL;
+	for(int q = 0; q<=1;q++)
 	{
+		bb = bread(1,q);
 		for(int i=0; i<512; i++)
 		{
-			printk("%c ", bb->data[i]);
+			printk("0x%x ", bb->data[i]);
 		}
+		brelease(bb);
+		bb = NULL;
+	}
+	
+	while(1)
+	{
+		
 	}
 }

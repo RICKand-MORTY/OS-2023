@@ -88,15 +88,11 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 	   		case S_INTERRUPT_CAUSE_TIMER:
 				handle_timer();
 				break;
-			case VIRTIO0_IRQ:
-				printk("virtio device interrupt!\n");
-				virtio_disk_intr();
-				break;
 			case S_INTERRUPT_CAUSE_EXTERNAL:
 				handle_plic_irq(regs);
 				break;
 	   		default:
-				printk("undefined interrupt!\n");
+				printk("undefined interrupt %d!\n", (scause & ~SCAUSE_INT));
 				break;
 	   }
 	} 

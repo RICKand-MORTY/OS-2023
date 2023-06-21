@@ -5,7 +5,7 @@
 #include "LinkList.h"
 #include "sleeplock.h"
 
-#define BSIZE   (1024)
+#define BSIZE   (512)
 #define NUMBUF  (30)
 
 //reference from xv6

@@ -45,7 +45,7 @@ static struct disk {
     
     spinlock vdisk_lock;
   
-} disk;
+}__attribute__((aligned (PAGE_SIZE)))disk;
 
 //find a free desc
 static int alloc_desc()
@@ -99,8 +99,7 @@ static int alloc3_desc(int *idx)
 
 void virtio_disk_rw(Buf *b, int write)
 {
-    uint64_t sector = b->blockno * (BSIZE / 512);
-    spin_lock(&disk.vdisk_lock);
+    uint64_t sector = b->blockno;
     
     // allocate the three descriptors.
     int idx[3];
@@ -111,31 +110,36 @@ void virtio_disk_rw(Buf *b, int write)
         }
     }
 
-    struct virtio_blk_req *buf0 = &disk.ops[idx[0]];
+    struct virtio_blk_req {
+    // header
+    __virtio32 type; // VIRTIO_BLK_T_IN for read
+    __virtio32 reverse; 
+    __virtio64 sector; // sector number 
+    } buf0;
 
     if(write)
-        buf0->type = VIRTIO_BLK_T_OUT; // write the disk
+        buf0.type = VIRTIO_BLK_T_OUT; // write the disk
     else
-        buf0->type = VIRTIO_BLK_T_IN; // read the disk
-    buf0->reverse = 0;
-    buf0->sector = sector;
-
+        buf0.type = VIRTIO_BLK_T_IN; // read the disk
+    buf0.reverse = 0;
+    buf0.sector = sector;
+    
     /*
     构造包含三个描述符的链
     第一个是sizeof(struct virtio_blk_req)个字节长，包含type, reserved, 和sector。该描述符是只读的。
     第二个是BSIZE字节长，指向一个完全不同的内存地址（data传递给函数）,用于存放数据。该描述符是设备可写的。
     第三个是1字节长，指向结构的末尾virtio_blk_req ，设备可以在此处写入状态信息。
     */
-
+    //u64 buf_page = alloc_pgtable();
+    //create_pgd_mapping(_pgd_page_begin,(u64)&buf0, (u64)&buf0, sizeof(buf0), PAGE_KERNEL_READ_EXEC, alloc_pgtable, 0 );
     //idx0
-    create_pgd_mapping(_pgd_page_begin,(u64)buf0,(u64)buf0,sizeof(struct virtio_blk_req), PAGE_KERNEL_READ_EXEC, alloc_pgtable, 0 );
-    disk.desc[idx[0]].addr = (__virtio64)buf0;
+    disk.desc[idx[0]].addr = &buf0;
     disk.desc[idx[0]].len = sizeof(struct virtio_blk_req);
     disk.desc[idx[0]].flags = VIRTQ_DESC_F_NEXT;
     disk.desc[idx[0]].next = idx[1];
     
     //idx1
-    disk.desc[idx[1]].addr = (__virtio64) b->data;
+    disk.desc[idx[1]].addr = (__virtio64)b->data;
     disk.desc[idx[1]].len = BSIZE;
     if(write)
         disk.desc[idx[1]].flags = 0; // device reads b->data
@@ -146,7 +150,7 @@ void virtio_disk_rw(Buf *b, int write)
 
     //idx2
     disk.info[idx[0]].status = 0; // device writes 0 on success
-    disk.desc[idx[2]].addr = (__virtio64) &disk.info[idx[0]].status;
+    disk.desc[idx[2]].addr = (__virtio64)&disk.info[idx[0]].status;
     disk.desc[idx[2]].len = 1;
     disk.desc[idx[2]].flags = VIRTQ_DESC_F_WRITE; // device writes the status
     disk.desc[idx[2]].next = 0;
@@ -156,24 +160,19 @@ void virtio_disk_rw(Buf *b, int write)
     
     disk.avail->ring[disk.avail->idx % QUEUE_SIZE] = idx[0];    //use % because is a circular
     __sync_synchronize();
-
-    // tell the device another avail ring entry is available.
+    //disk.avail[2 + (disk.avail[1] % QUEUE_SIZE)] = idx[0];
+    __sync_synchronize();
     disk.avail->idx += 1;
     __sync_synchronize();
 
     writeword(0, &g_regs->QueueNotify);
-    __sync_synchronize();
 
-    while(b->disk == 1)
+    while (b->disk == 1)
     {
-        printk("waiting!\n");
-        __sync_synchronize(); // ensure memory barrier before checking b->disk
+        //printk("wait!\n");
     }
-
-
     disk.info[idx[0]].b = 0;
     free_chain(idx[0]);
-
 }
 
 void virtio_disk_intr()
@@ -238,12 +237,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     //printk("regs->QueueSel = 0x%x\n", ((unsigned long)&regs->QueueSel - (unsigned long)regs));
     refresh_cache();
 
-    //b. Check if the queue is not already in use: read QueuePFN, expecting a returned value of zero (0x0).
-    if(readword(&regs->QueuePFN))
-    {
-        printk("the queue is already in use\n");
-    }
-    refresh_cache();
+    
     /*
     c. Read maximum queue size (number of elements) from QueueNumMax. If the returned value is zero
     (0x0) the queue is not available.
@@ -263,8 +257,9 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     writeword(QUEUE_SIZE, &regs->QueueNum);
     refresh_cache();
 
-    memset(disk.pages, 0, sizeof(disk.pages));
-    writeword(((u64)disk.pages) >> PAGE_SHIFT, &regs->QueuePFN);
+    memset(disk.pages, 0, sizeof(PAGE_SIZE * 3));
+
+    writeword((unsigned long)disk.pages >> PAGE_SHIFT, &regs->QueuePFN);
     refresh_cache();
 
     /*
@@ -272,9 +267,9 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
     aligning the Used Ring to an optimal boundary (usually page size). 
     The driver should choose a queue size smaller than or equal to
     */
-    disk.desc = (struct vring_desc*)((unsigned long)disk.pages);
-    disk.avail = (struct vring_avail*)(((char*)disk.desc) + QUEUE_SIZE*sizeof(struct vring_desc));
-    disk.used = (struct vring_used*)PAGE_ALIGN_UP((unsigned long)(disk.pages + PAGE_SIZE));
+    disk.desc = (struct vring_desc *)(disk.pages);
+    disk.avail = (struct vring_avail*)((((char*)disk.desc) + QUEUE_SIZE*sizeof(struct vring_desc)));
+    disk.used = (struct vring_used*)((disk.pages + PAGE_SIZE));
     
     for(int i = 0; i < QUEUE_SIZE; i++)
     {
@@ -283,6 +278,7 @@ static int virtio_blk_init_legacy(virtio_regs_legacy *regs, uint32_t intid)
 
     printk("virtio device init finish!\n");
     g_regs = regs;
+    //create_pgd_mapping(_pgd_page_begin,(u64)disk.pages,(u64)disk.pages,PAGE_SIZE * 3, PAGE_KERNEL_READ_EXEC, alloc_pgtable, 0 );
     return 0;
 }
 
@@ -402,8 +398,8 @@ static int virtio_dev_init(uint64_t virt, uint64_t intid)
     }
 
     //1.reset device
-    writeword(0, &regs->Status);
-    refresh_cache();
+    //writeword(0, &regs->Status);
+    //refresh_cache();
     //2.Set the ACKNOWLEDGE status bit: the guest OS has noticed the device.
     writeword(readword(&regs->Status) | VIRTIO_STATUS_ACKNOWLEDGE, &regs->Status);
     refresh_cache();
@@ -431,10 +427,14 @@ void virtio_init()
     {
         alloc_pgtable();
     }
+    
     //MAP VIRTIO
     //create_pgd_mapping((pgd_page*)virt_page,0x10001000,virt_page,(PAGE_SIZE*12), PAGE_KERNEL, alloc_pgtable, 0); 
     //refresh_cache();
     printk("0x%x",(*(volatile unsigned int*)virt_page));*/
+    //u64 virtio_addr = alloc_pgtable();
+    //create_pgd_mapping(_pgd_page_begin,(u64)virtio_addr,(u64)0x10001000,PAGE_SIZE, PAGE_KERNEL_READ_EXEC, alloc_pgtable, 0 );
+
     for (int i = 0; i < 1; i++)
     	virtio_dev_init(0x10001000 + VIRTIO_REGS_SIZE * i, 32 + 0x10 + i);
 }
