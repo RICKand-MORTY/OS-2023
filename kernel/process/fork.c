@@ -132,7 +132,7 @@ int create_user_place(unsigned long sepc)
     return 0;
 }
 
-void sleep(int pid)
+PCB* sleep(int pid)
 {
     PCB *pcb = g_task[pid];
     pcb->task_state = TASK_INTERRUPTIBLE;

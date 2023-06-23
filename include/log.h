@@ -8,6 +8,7 @@
 #define BSIZE       1024    //block size
 #define MAXBLOCKS   10      //maximum blocks of log in an operation(syscall)
 
+
 struct logheader {
   int n;  //日志块的数量
   int block[LOGSIZE]; //扇区号表明该日志块，应该写入的位置。

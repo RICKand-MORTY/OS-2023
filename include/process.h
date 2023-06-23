@@ -103,6 +103,6 @@ void sched_init(void);
 int create_user_place(unsigned long sepc);
 void start_user_thread(struct pt_regs *regs, unsigned long sepc, unsigned long sp);
 extern void ret_from_fork(void);
-void sleep(int pid);
+PCB* sleep(int pid);
 void wakeup(int pid);
 #endif

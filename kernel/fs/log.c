@@ -1,10 +1,13 @@
 #include<log.h>
 #include<buf.h>
 #include<process.h>
+#include "../../lib/lib.h"
 
+PCB *sleep_pro;
 struct log log;
 
 static void recover_from_log(void);
+static void commit();
 
 int initlog(int dev, superblock_p sb)
 {
@@ -78,14 +81,14 @@ static void recover_from_log(void)
   write_head(); 
 }
 
-void begin_add_log(void)
+void begin_log(void)
 {
   spin_lock(&log.snlock);
   while (1)
   {
-    if(log.committing || log.lh.n + (log.outstanding+1)* LOGSIZE > LOGSIZE)
+    if(log.committing || log.lh.n + (log.outstanding+1)* MAXBLOCKS > LOGSIZE)
     {
-      sleep(get_current_task()->pid);
+      sleep_pro = sleep(get_current_task()->pid);
     }
     else
     {
@@ -94,4 +97,89 @@ void begin_add_log(void)
       break;
     }
   }
+}
+
+void end_log(void)
+{
+  int do_commit = 0;
+  spin_lock(&log.snlock);
+  log.outstanding -= 1;
+  if(log.committing)
+    printk("log.committing\n");
+  if(log.outstanding == 0){
+    //没有其他操作正在执行了
+    do_commit = 1;
+    log.committing = 1;
+  } 
+  else 
+  {
+    //还有其他操作正在执行
+    if(sleep_pro->pid != 0)
+    {
+      wakeup(sleep_pro->pid);
+    }
+  }
+  spin_unlock(&log.snlock);
+
+  if(do_commit){
+    // call commit w/o holding locks, since not allowed
+    // to sleep with locks.
+    commit(); //前面要先释放锁，后面再加上锁，因为睡眠不能持有锁，否则可能会死锁
+    spin_lock(&log.snlock);
+    log.committing = 0;
+    if(sleep_pro->pid != 0)
+    {
+      wakeup(sleep_pro->pid);
+    }
+    spin_unlock(&log.snlock);
+  }
+}
+
+static void write_log(void)
+{
+  int tail;
+
+  for (tail = 0; tail < log.lh.n; tail++) {
+    struct buf *to = bread(log.dev, log.start+tail+1); // log block
+    struct buf *from = bread(log.dev, log.lh.block[tail]); // cache block
+    memmove(to->data, from->data, BSIZE);
+    bwrite(to);  // write the log
+    brelease(from);
+    brelease(to);
+  }
+}
+
+static void commit()
+{
+  if (log.lh.n > 0) {
+    write_log();     // Write modified blocks from cache to log
+    write_head();    // Write header to disk -- the real commit
+    install_trans(0); // Now install writes to home locations
+    //install_trans是把write_log写入的数据又写回文件系统中。这样做的目的是为了保证文件系统的一致性，
+    //即使在出现故障时也能恢复文件系统的状态。
+    log.lh.n = 0;
+    write_head(); 
+  }
+}
+
+void log_write(struct buf *b)
+{
+  int i=0;
+  spin_lock(&log.snlock);
+  if (log.lh.n >= LOGSIZE || log.lh.n >= log.size - 1)
+    printk("too big a transaction");
+  if (log.outstanding < 1)
+  //没有操作正在执行
+    printk("log_write outside of trans");
+
+  for (i = 0; i < log.lh.n; i++) {
+    if (log.lh.block[i] == b->blockno)   // log absorption
+      break;
+  }
+  log.lh.block[i] = b->blockno;
+  if (i == log.lh.n) {  // Add new block to log?
+    b_add_ref(b);
+    log.lh.n++;
+  }
+  spin_unlock(&log.snlock);
 }

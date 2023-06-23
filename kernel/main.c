@@ -147,7 +147,7 @@ void kernel_main(void)
 	//switch_to(get_current_task(), g_task[pid]);
 	//int pid = do_fork(KERNEL_THREAD, user_initial, 0);
 	//switch_to(get_current_task(), g_task[pid]);
-	printk("virtio_regs size = %d\n",sizeof(virtio_regs));
+	//printk("virtio_regs size = %d\n",sizeof(virtio_regs));
 	irq_enable();
 	virtio_init();
 	binit();
