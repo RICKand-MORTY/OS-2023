@@ -5,7 +5,7 @@
 #include "spinlock.h"
 
 #define LOGSIZE     30      //log maximum size of blocks
-#define BSIZE       1024    //block size
+#define BSIZE       512    //block size
 #define MAXBLOCKS   10      //maximum blocks of log in an operation(syscall)
 
 

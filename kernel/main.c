@@ -13,6 +13,7 @@
 #include <sleeplock.h>
 #include <virtio.h>
 #include "../usr/user_syscall.h"
+#include <fat32.h>
 
 extern char _bss_begin[], _bss_end[];
 extern char _text[], _etext[];
@@ -151,17 +152,7 @@ void kernel_main(void)
 	irq_enable();
 	virtio_init();
 	binit();
-	Buf *bb = NULL;
-	for(int q = 0; q<=1;q++)
-	{
-		bb = bread(1,q);
-		for(int i=0; i<512; i++)
-		{
-			printk("0x%x ", bb->data[i]);
-		}
-		brelease(bb);
-		bb = NULL;
-	}
+	fat32_init();
 	
 	while(1)
 	{

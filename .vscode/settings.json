@@ -33,6 +33,7 @@
         "buf.h": "c",
         "fs.h": "c",
         "log.h": "c",
-        "test.h": "c"
+        "test.h": "c",
+        "fat32.h": "c"
     }
 }
