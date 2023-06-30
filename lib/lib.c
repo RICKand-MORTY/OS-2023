@@ -1,6 +1,5 @@
 #include "lib.h"
 
-typedef unsigned int size_t;
 
 int strlen(const char* s)
 {
