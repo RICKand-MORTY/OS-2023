@@ -98,3 +98,7 @@ int plic_init()
     return 0;
 }
 
+void enable_virtio_irq()
+{
+	plic_switch_irq(0, VIRTIO0_IRQ, 1);
+}

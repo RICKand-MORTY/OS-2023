@@ -34,6 +34,7 @@
         "fs.h": "c",
         "log.h": "c",
         "test.h": "c",
-        "fat32.h": "c"
+        "fat32.h": "c",
+        "string.h": "c"
     }
 }

@@ -2,30 +2,6 @@
 #define _FAT32_H
 
 
-/*MBR内分区表*/
-struct Disk_Partition_Table_Entry
-{
-	unsigned char flags;				//引导标志
-	unsigned char start_head;			//磁头号、扇区号、柱面号(sd卡不用管)
-	unsigned short  start_sector	:6,	//0~5
-			start_cylinder	:10;		//6~15
-	unsigned char type;					//分区类型符(83H为Linux分区)
-	unsigned char end_head;				//结束磁头号、扇区号、柱面号
-	unsigned short  end_sector	:6,		//0~5
-			end_cylinder	:10;		//6~15
-	unsigned int start_LBA;				//逻辑起始扇区号
-	unsigned int sectors_limit;			//本分区的总扇区数
-	
-}__attribute__((packed));
-
-/*MBR*/
-struct Disk_Partition_Table
-{
-	unsigned char BS_Reserved[446];             //used for bootloader
-	struct Disk_Partition_Table_Entry DPTE[4];  
-	unsigned short BS_TrailSig;
-}__attribute__((packed));
-
 /*fat32引导扇区*/
 struct FAT32_BootSector
 {
@@ -115,5 +91,43 @@ struct FAT32_LongDirectory
 	unsigned short LDIR_Name3[2];
 }__attribute__((packed));
 
-void fat32_init();
+struct FAT32_sb_info
+{
+	unsigned long start_sector;
+	unsigned long sector_count;
+
+	long sector_per_cluster;
+	long bytes_per_cluster;
+	long bytes_per_sector;
+
+	unsigned long Data_firstsector;
+	unsigned long FAT1_firstsector;
+	unsigned long sector_per_FAT;
+	unsigned long NumFATs;
+
+	unsigned long fsinfo_sector_infat;
+	unsigned long bootsector_bk_infat;
+	
+	struct FAT32_FSInfo * fat_fsinfo;
+};
+
+struct FAT32_inode_info
+{
+	unsigned long first_cluster;
+	unsigned long dentry_location;	////dentry struct in cluster(0 is root,1 is invalid)
+	unsigned long dentry_position;	////dentry struct offset in cluster
+
+	unsigned short create_date;
+	unsigned short create_time;
+
+	unsigned short write_date;
+	unsigned short write_time;
+};
+
+extern struct index_node_operations FAT32_inode_ops;
+extern struct file_operations FAT32_file_ops;
+extern struct dir_entry_operations FAT32_dentry_ops;
+extern struct super_block_operations FAT32_sb_ops;
+
+void FAT32_init();
 #endif

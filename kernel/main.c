@@ -152,20 +152,7 @@ void kernel_main(void)
 	irq_enable();
 	virtio_init();
 	binit();
-	fat32_init();
-	unsigned int res = 0x12345678;
-	char data[4];
-	int pos = 0;
-	data[pos] = (unsigned char)(res & 0x000000ff);
-    data[pos + 1] = (unsigned char)((res & 0x0000ff00) >> 8);
-    data[pos + 2] = (unsigned char)((res & 0x00ff0000) >> 16);
-    data[pos + 3] = (unsigned char)((res & 0xff000000) >> 24);
-	unsigned int* dd = data;
-	printk("\n0x%x\n", *dd);
-	for(int i=0; i<4; i++)
-	{
-		printk("%x ",data[i]);
-	}
+	FAT32_init();
 	while(1)
 	{
 		

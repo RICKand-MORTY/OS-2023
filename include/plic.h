@@ -26,4 +26,5 @@ void plic_switch_irq(int core, int irq_num, bool on_off);
 void handle_plic_irq(struct pt_regs *regs);
 int plic_init();
 int handle_uart_irq();
+void enable_virtio_irq();
 #endif
