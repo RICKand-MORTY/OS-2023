@@ -117,6 +117,38 @@ unsigned char* read_more_sector(unsigned int block, unsigned int count, unsigned
 	return buf;
 }
 
+/*
+如果一个簇有多个扇区，通过该函数写入多个扇区，返回成功写入的字节数
+block: 起始扇区
+count: 扇区数量
+buf:   存放数据的缓冲区
+失败返回0
+*/
+unsigned int write_more_sector(unsigned char* buf, unsigned int block, unsigned int count)
+{
+	Buf *buffer = NULL;
+	int i = 0;
+	unsigned int count_sector = 0;
+	unsigned int buflen = 0;
+	if(buf == NULL)
+	{
+		printk("buf is NULL!!!\n");
+		return 0;
+	}
+	for(; count_sector < count; count_sector++)
+	{
+		buffer = bget(1, block + count_sector);
+		if(buffer == NULL)
+		{
+			return 0;
+		}
+		memcpy(buffer->data, buf + buflen, BSIZE);
+		buflen += BSIZE;
+		bwrite(buffer);
+		brelease(buffer);
+	}
+	return buflen;
+}
 
 long FAT32_open(struct index_node * inode,struct file * filp)
 {}
@@ -880,18 +912,45 @@ void fat32_write_superblock(struct super_block * sb)
 
 }
 
+//释放superblock
 void fat32_put_superblock(struct super_block * sb)
 {
 	page_free_addr(sb->private_sb_info);
 	page_free_addr(sb->root->dir_inode->private_index_info);
+	page_free_addr(sb->root->name);
 	page_free_addr(sb->root->dir_inode);
 	page_free_addr(sb->root);
 	page_free_addr(sb);
 }
 
+//写回修改后的inode
 void fat32_write_inode(struct index_node * inode)
 {
+	struct FAT32_Directory * fdentry = NULL;
+	struct FAT32_Directory * buf = NULL;
+	struct FAT32_inode_info * finode = inode->private_index_info;
+	struct FAT32_sb_info * fsbi = inode->sb->private_sb_info;
+	unsigned int buflen = 0;
+	unsigned long sector = 0;
 
+	if(finode->dentry_location == 0)
+	{
+		//is root
+		printk("FS ERROR:write root inode!\n");	
+		return ;
+	}
+
+	sector = fsbi->Data_firstsector + (finode->dentry_location - 2) * fsbi->sector_per_cluster;
+	buf = (struct FAT32_Directory *)read_more_sector(sector, fsbi->sector_per_cluster, &buflen);
+	fdentry = buf+finode->dentry_position;
+
+	//update dentry info
+	fdentry->DIR_FileSize = inode->file_size;
+	fdentry->DIR_FstClusLO = finode->first_cluster & 0xffff;
+	fdentry->DIR_FstClusHI = (fdentry->DIR_FstClusHI & 0xf000) | (finode->first_cluster >> 16);
+
+	write_more_sector((unsigned char *)buf, sector, fsbi->sector_per_cluster);
+	page_free_addr(buf);
 }
 
 struct super_block_operations FAT32_sb_ops = 

@@ -26,4 +26,5 @@ void bwrite(Buf *b);
 void brelease(Buf* b);
 void b_add_ref(Buf *b);
 void b_de_ref(Buf *b); 
+Buf* bget(unsigned int dev, unsigned int blockno);
 #endif

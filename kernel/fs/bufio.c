@@ -27,7 +27,7 @@ void binit(void)
 }
 
 
-static Buf* bget(unsigned int dev, unsigned int blockno)
+Buf* bget(unsigned int dev, unsigned int blockno)
 {
     Buf* b;
     PLinkList p = &bcache.head;
@@ -66,6 +66,7 @@ static Buf* bget(unsigned int dev, unsigned int blockno)
     }
     printk("error: No Buf!\n");
     spin_unlock(&bcache.lock);
+    return NULL;
 }
 
 // Return a locked buf with the contents of the indicated block.

@@ -114,8 +114,8 @@ struct FAT32_sb_info
 struct FAT32_inode_info
 {
 	unsigned long first_cluster;
-	unsigned long dentry_location;	////dentry struct in cluster(0 is root,1 is invalid)
-	unsigned long dentry_position;	////dentry struct offset in cluster
+	unsigned long dentry_location;	//dentry struct in cluster(0 is root,1 is invalid)
+	unsigned long dentry_position;	//dentry struct offset in cluster
 
 	unsigned short create_date;
 	unsigned short create_time;
