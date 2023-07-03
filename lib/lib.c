@@ -1,5 +1,6 @@
 #include "lib.h"
 
+#define NULL ((void*)0)
 
 int strlen(const char* s)
 {
@@ -73,4 +74,22 @@ int strcmp(const char *s1, const char *s2)
 		return -1; 
 	else 
 		return 1; 
+}
+
+char *strcpy(char *dest, const char *src)
+{
+    if (dest == NULL || src == NULL)
+    {
+        return NULL;
+    }
+    const char *p = src;
+    char *q = dest;
+    while (*p != '\0')
+    {
+        *q = *p;
+        p++;
+        q++;
+    }
+    *q = '\0';
+    return dest;
 }

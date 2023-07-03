@@ -10,5 +10,4 @@ typedef long (*syscall_fun)(struct pt_regs *);
 
 extern const syscall_fun syscall_table[TOTAL_SYSCALLS];
 void syscall_handler(struct pt_regs *regs);
-
 #endif

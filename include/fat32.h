@@ -130,4 +130,5 @@ extern struct dir_entry_operations FAT32_dentry_ops;
 extern struct super_block_operations FAT32_sb_ops;
 
 void FAT32_init();
+struct dir_entry * path_walk(char * name,unsigned long flags);
 #endif

@@ -4,7 +4,7 @@
 
 typedef unsigned long _u64;
 
-#define SYSCALL_0(n)												internal_syscall(n, 0, 0, 0, 0, 0, 0)
+#define SYSCALL_0(n)													internal_syscall(n, 0, 0, 0, 0, 0, 0)
 #define SYSCALL_1(n, arg0)												internal_syscall(n, arg0, 0, 0, 0, 0, 0)
 #define SYSCALL_2(n, arg0, arg1)										internal_syscall(n, arg0, arg1, 0, 0, 0, 0)
 #define SYSCALL_3(n, arg0, arg1, arg2)									internal_syscall(n, arg0, arg1, arg2, 0, 0, 0)
@@ -20,4 +20,5 @@ extern int __clone(int (*fn)(void *arg), void *child_stack,
 		int flags, void *arg);
 _u64 clone(int (*thread_callback)(void *arg), void *child_stack, int flag, void *arg);
 _u64 malloc();
+unsigned long open(char *pathname, int flags);
 #endif

@@ -51,3 +51,9 @@ unsigned long need_to_schedule()
 {
 	SYSCALL_1(SYS_sched_yield,get_current_task());
 }
+
+
+unsigned long open(char *pathname, int flags)
+{
+	return SYSCALL_2(SYS_open, pathname, flags);
+}

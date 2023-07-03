@@ -151,7 +151,9 @@ unsigned int write_more_sector(unsigned char* buf, unsigned int block, unsigned 
 }
 
 long FAT32_open(struct index_node * inode,struct file * filp)
-{}
+{
+	return 1;
+}
 
 
 long FAT32_close(struct index_node * inode,struct file * filp)

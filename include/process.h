@@ -4,6 +4,10 @@
 
 #include "scheduler.h"
 #include "LinkList.h"
+#include "VFS.h"
+#include "fat32.h"
+
+#define TASK_FILE_MAX	10
 
 //store cpu context 
 typedef struct _cpu_context
@@ -26,6 +30,7 @@ typedef struct task_struct
     int pid;
     int scramble;                   //if is scramble           
     int priority;
+    struct file* file_struct[TASK_FILE_MAX];
     struct task_struct *next_task;
     struct task_struct *prev_task;
 }PCB;
@@ -63,6 +68,7 @@ struct sched_class {
     .priority   = 1,                    \
     .task_flags = KERNEL_THREAD,        \
     .pid        = 0,                    \
+    .file_struct= {0}                   \ 
 }
 
 /*

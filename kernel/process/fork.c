@@ -95,6 +95,7 @@ int do_fork(unsigned long clone_flags, unsigned long callback_fun, unsigned long
 	total_forks++;
     pcb->pid = pid;
     g_task[pid] = pcb;
+    memset(&pcb->file_struct, NULL, sizeof(struct file*) * TASK_FILE_MAX);
     simple_sched_class.enqueue_task(&g_queue, pcb);
     return pid;
 }
