@@ -23,4 +23,5 @@ _u64 malloc();
 unsigned long open(char *pathname, int flags);
 unsigned long close(int fd);
 long read(int fd, void *buf, unsigned int count);
+long write(int fd, void *buf, unsigned int count);
 #endif

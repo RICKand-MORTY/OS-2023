@@ -63,7 +63,7 @@ PCB* pick_next_task_simple(struct ready_queue *rq, PCB* prev)
         reset_score(rq);
         goto repeat;
     }
-    printk("%s: pick next thread (pid %d)\n", __func__, next->pid);
+    //printk("%s: pick next thread (pid %d)\n", __func__, next->pid);
 	return next;
 }
 

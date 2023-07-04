@@ -102,6 +102,7 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 		{
 		case EXC_SYSCALL:
 			regs->sepc += 4;		//ECALL need to back to next instruction
+			irq_enable();			//ECALL turns off irq, we need to open it
 			syscall_handler(regs);
 			break;
 		default:

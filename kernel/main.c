@@ -29,11 +29,17 @@ spinlock print_lock = {.lock = 0};
 
 int user_thread_1(void *arg)
 {
-    while (1)
-    {
-		delay(1000);
-		print("this is hc\n");
-    }
+	unsigned char abc[] = "hello RISCV!!!\n";
+	print("this is user_thread_1\n");
+    u64 fd = open("/busybox_cmd.txt",O_APPEND);
+	print("buflen = %d\n",strlen(abc));
+	int aa = write(fd, abc, strlen(abc));
+	print("\n\n");
+	int a = close(fd);
+	while (1)
+	{
+	}
+	
 }
 
 int user_main()
@@ -41,6 +47,7 @@ int user_main()
 	unsigned long child_stack;
 	int ret;
 	unsigned long i = 0;
+	print("this is user_main!\n");
 	child_stack = malloc();
 	if (child_stack < 0) {
 		print("cannot allocate memory\n");
@@ -57,14 +64,14 @@ int user_main()
 
 	print("child_stack 0x%x\n", child_stack);
 
-	/*ret = clone(&user_thread_1,
+	ret = clone(&user_thread_1,
 			(void *)(child_stack + PAGE_SIZE), 0, NULL);
 	if (ret < 0) {
 		print("%s: error while clone\n", __func__);
 		return ret;
 	}
 
-	print("clone done, 0x%lx 0x%lx\n", &user_thread_1, child_stack + PAGE_SIZE);
+	/*print("clone done, 0x%lx 0x%lx\n", &user_thread_1, child_stack + PAGE_SIZE);
 	while (1) {
 		delay(1000);
 		print("%s: %lu\n", __func__, i++);
@@ -72,14 +79,7 @@ int user_main()
 	//u64 fd = open("/busybox",O_RDONLY);
 	//print("\n fd = %d\n",fd);
 	//int a = close(fd);
-	u64 fd = open("/readme.txt",O_RDONLY);
-	unsigned char *buf = malloc();
-	int num = read(fd, buf, 10);
-	for(int i=0; i<num; i++)
-	{
-		print("%c",buf[i]);
-	}
-	int a = close(fd);
+	
 	while (1)
 	{
 	}
@@ -124,8 +124,8 @@ void kernel_main(void)
 	printk("mmu_ok\n");
 	timer_init();
 	irq_enable();
-	virtio_init();
 	binit();
+	virtio_init();
 	FAT32_init();
 	printk("\n\nHello.\n");
 	printk("========== START test_write ==========\n");

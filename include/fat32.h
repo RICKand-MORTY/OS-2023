@@ -131,4 +131,5 @@ extern struct super_block_operations FAT32_sb_ops;
 
 void FAT32_init();
 struct dir_entry * path_walk(char * name,unsigned long flags);
+unsigned char* read_more_sector(unsigned int block, unsigned int count, unsigned int *size);
 #endif

@@ -166,7 +166,6 @@ void virtio_disk_rw(Buf *b, int write)
     __sync_synchronize();
 
     writeword(0, &g_regs->QueueNotify);
-
     while (b->disk == 1)
     {
         //printk("wait!\n");

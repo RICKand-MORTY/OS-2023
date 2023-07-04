@@ -19,6 +19,7 @@ void deal_syscall(struct pt_regs *regs, unsigned long syscall_num)
 {
 	syscall_fun callback;
     long ret;
+	
 	if(syscall_num < TOTAL_SYSCALLS)
 	{
 		callback = syscall_table[syscall_num];
@@ -57,7 +58,7 @@ long callback_sys_open(struct pt_regs *regs)
 {
 	char *pathname = (char *)regs->a0;
 	int flags = (int)regs->a1;
-	
+	int size = 0;
 	char * path = NULL;
 	long pathlen = 0;
 	long error = 0;
@@ -66,6 +67,7 @@ long callback_sys_open(struct pt_regs *regs)
 	struct file ** f = NULL;
 	int fd = -1;
 	int i;
+
 	printk("sys_open!\n");
 	path = alloc_pgtable();
 	if(path == 1)
@@ -144,7 +146,7 @@ long callback_sys_close(struct pt_regs *regs)
 	int fd = (int)regs->a0;		//file desc
 	struct file * filp = NULL;
 
-	printk("sys_close:%d\n",fd);
+	int size = 0;
 	if(fd < 0 || fd >= TASK_FILE_MAX)
 	{
 		//return -EBADF;
@@ -184,6 +186,34 @@ long callback_sys_read(struct pt_regs *regs)
 	return ret;
 }
 
+long callback_sys_write(struct pt_regs *regs)
+{
+	int fd = (int)regs->a0;
+	unsigned char* buf = regs->a1;
+	unsigned int count = regs->a2;
+
+	struct file * filp = NULL;
+	long ret = 0;
+
+	printk("sys_write:%d\n",fd);
+	if(fd < 0 || fd >= TASK_FILE_MAX)
+		return -EBADF;
+	if(count < 0)
+		return -EINVAL;
+
+	filp = get_current_task()->file_struct[fd];
+	if(filp->f_ops && filp->f_ops->write)
+		ret = filp->f_ops->write(filp,buf,count,&filp->position);
+	if(ret < 0)
+	{
+		return -1;
+	}
+	else
+	{
+		return ret;
+	}
+}
+
 long callback_sys_openat(int fd, char *filename, int flags, int mode)
 {
 	return 1;
@@ -191,7 +221,7 @@ long callback_sys_openat(int fd, char *filename, int flags, int mode)
 
 long callback_sys_malloc()
 {
-	return page_alloc();
+	return alloc_pgtable();
 }
 
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
@@ -206,4 +236,5 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_openat, sys_openat)
 	__SYSCALL(SYS_close, sys_close)
 	__SYSCALL(SYS_read, sys_read)
+	__SYSCALL(SYS_write, sys_write)
 };

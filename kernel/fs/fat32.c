@@ -217,9 +217,123 @@ long FAT32_read(struct file * filp,char * buf,unsigned long count,long * positio
 	return retval;
 }
 
+//获取一个空闲的簇，返回其在fat中的表项
+unsigned long FAT32_find_available_cluster(struct FAT32_sb_info * fsbi)
+{
+	int i = 0, j = 0;
+	unsigned int *buf;
+	int size = 0;
+	for(int i = 0; i < fsbi->sector_per_FAT; i++)
+	{
+		buf = (unsigned int *)read_more_sector(fsbi->FAT1_firstsector + i, 1, &size);
+		for(j = 0;j < 128;j++)
+		{
+			if((buf[j] & 0x0fffffff) == 0)
+				return (i << 7) + j;
+		}
+	}
+}
 
 long FAT32_write(struct file * filp,char * buf,unsigned long count,long * position)
-{}
+{
+	struct FAT32_inode_info * finode = filp->dentry->dir_inode->private_index_info;
+	struct FAT32_sb_info * fsbi = filp->dentry->dir_inode->sb->private_sb_info;
+
+	unsigned long cluster = finode->first_cluster;
+	unsigned long next_cluster = 0;
+	unsigned long sector = 0;
+	int i,length = 0;
+	long retval = 0;
+	long flags = 0;
+	int index = *position / fsbi->bytes_per_cluster;
+	long offset = *position % fsbi->bytes_per_cluster;
+	unsigned char * buffer = NULL;
+	unsigned int bufsize = 0;
+
+	if(!cluster)
+	{
+		cluster = FAT32_find_available_cluster(fsbi);
+		flags = 1;
+	}
+	else
+		for(i = 0;i < index;i++)
+			cluster = read_FAT_Entry(fsbi,cluster);
+
+	if(!cluster)
+	{
+		return -ENOSPC;
+	}
+
+	if(flags)
+	{
+		//创建文件
+		finode->first_cluster = cluster;
+		filp->dentry->dir_inode->sb->sb_ops->write_inode(filp->dentry->dir_inode);
+		write_FAT_Entry(fsbi,cluster,0x0ffffff8);
+	}
+
+	index = count;
+
+	do
+	{
+		if(!flags)
+		{
+			sector = fsbi->Data_firstsector + (cluster - 2) * fsbi->sector_per_cluster;
+			buffer = read_more_sector(sector, fsbi->sector_per_cluster, &bufsize);
+			if(!buffer)
+			{
+				retval = -EIO;
+				break;
+			}
+		}
+
+		length = index <= fsbi->bytes_per_cluster - offset ? index : fsbi->bytes_per_cluster - offset;
+		memcpy(buffer + offset, buf, length);
+		if(!write_more_sector(buffer, sector, fsbi->sector_per_cluster))
+		{
+			printk("FAT32 FS(write) write disk ERROR!!!!!!!!!!\n");
+			retval = -EIO;
+			break;
+		}
+
+		index -= length;
+		buf += length;
+		offset -= offset;
+		*position += length;
+
+		if(index)
+			next_cluster = read_FAT_Entry(fsbi,cluster);
+		else
+			break;
+
+		if(next_cluster >= 0x0ffffff8)
+		{
+			next_cluster = FAT32_find_available_cluster(fsbi);
+			if(!next_cluster)
+			{
+				page_free_addr(buffer);
+				return -ENOSPC;
+			}			
+				
+			write_FAT_Entry(fsbi,cluster,next_cluster);
+			write_FAT_Entry(fsbi,next_cluster,0x0ffffff8);
+			cluster = next_cluster;
+			flags = 1;
+		}
+
+	}while(index);
+
+	if(*position > filp->dentry->dir_inode->file_size)
+	{
+		filp->dentry->dir_inode->file_size = *position;
+		filp->dentry->dir_inode->sb->sb_ops->write_inode(filp->dentry->dir_inode);
+	}
+
+	page_free_addr(buffer);
+	if(!index)
+		retval = count;
+	return retval;
+}
 
 
 long FAT32_lseek(struct file * filp,long offset,long origin)
@@ -1061,11 +1175,11 @@ void FAT32_init()
 	buf = bread(1, DPT.DPTE[0].start_LBA);
 	root_sb = mount_fs("FAT32",&DPT.DPTE[0],(void *)buf->data);
 
-	dentry = path_walk("/busybox",0);
+	/*dentry = path_walk("/aabbcc",0);
 	if(dentry != NULL)
 		printk("\nFind /busybox\nDIR_FirstCluster:%#018lx\tDIR_FileSize:%#018lx\n",((struct FAT32_inode_info *)(dentry->dir_inode->private_index_info))->first_cluster,dentry->dir_inode->file_size);
 	else
-		printk("Can`t find file\n");
+		printk("Can`t find file\n");*/
 }
 
 //used for debug

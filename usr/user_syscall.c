@@ -67,3 +67,8 @@ long read(int fd, void *buf, unsigned int count)
 {
 	return SYSCALL_3(SYS_read, fd, buf, count);
 }
+
+long write(int fd, void *buf, unsigned int count)
+{
+	return SYSCALL_3(SYS_write, fd, buf, count);
+}
