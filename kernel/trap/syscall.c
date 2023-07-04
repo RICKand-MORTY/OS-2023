@@ -139,7 +139,52 @@ long callback_sys_open(struct pt_regs *regs)
 	return fd;
 }
 
-long callback_sys_openat(int fd, const char *filename, int flags, int mode)
+long callback_sys_close(struct pt_regs *regs)
+{
+	int fd = (int)regs->a0;		//file desc
+	struct file * filp = NULL;
+
+	printk("sys_close:%d\n",fd);
+	if(fd < 0 || fd >= TASK_FILE_MAX)
+	{
+		//return -EBADF;
+		return -1;
+	}
+	filp = get_current_task()->file_struct[fd];
+	if(filp->f_ops && filp->f_ops->close)
+	{
+		filp->f_ops->close(filp->dentry->dir_inode, filp);
+	}
+	page_free_addr(filp);
+	get_current_task()->file_struct[fd] = NULL;
+	return 0;
+}
+
+long callback_sys_read(struct pt_regs *regs)
+{
+	int fd = regs->a0;
+	unsigned char *buf = (unsigned char *)regs->a1;
+	size_t count = (size_t)regs->a2;
+	struct file* filp = NULL;
+	long ret = 0;
+	printk("sys_read:%d\n",fd);
+	if(fd < 0 || fd >= TASK_FILE_MAX)
+	{
+		return -1;
+	}
+	if(count < 0)
+	{
+		return -1;
+	}
+	filp = get_current_task()->file_struct[fd];
+	if(filp->f_ops && filp->f_ops->read)
+	{
+		ret = filp->f_ops->read(filp, buf, count, &filp->position);
+	}
+	return ret;
+}
+
+long callback_sys_openat(int fd, char *filename, int flags, int mode)
 {
 	return 1;
 }
@@ -147,11 +192,6 @@ long callback_sys_openat(int fd, const char *filename, int flags, int mode)
 long callback_sys_malloc()
 {
 	return page_alloc();
-}
-
-long callback_sys_close()
-{
-
 }
 
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
@@ -165,4 +205,5 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_open, sys_open)
 	__SYSCALL(SYS_openat, sys_openat)
 	__SYSCALL(SYS_close, sys_close)
+	__SYSCALL(SYS_read, sys_read)
 };

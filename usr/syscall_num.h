@@ -10,5 +10,6 @@
 #define SYS_open            55
 #define SYS_openat          56
 #define SYS_close           57
+#define SYS_read            63
 
 #endif

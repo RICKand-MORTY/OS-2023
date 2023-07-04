@@ -4,6 +4,8 @@
 #include <buf.h>
 #include <memory.h>
 #include <VFS.h>
+#include <error.h>
+#include <process.h>
 
 //#define QEMU
 
@@ -25,7 +27,7 @@ unsigned int read_FAT_Entry(struct FAT32_sb_info * fsbi, unsigned int fat_entry)
 	Buf *buf = bread(1, fsbi->FAT1_firstsector + (fat_entry >> 7));
 	memcpy(buffer, buf->data, BSIZE);
 	//& 0x7f相当于对128取余，得到fat表项在本扇区内偏移量
-	printk("DISK1_FAT32_read_FAT_Entry fat_entry:%#018lx,%#010x\n",fat_entry,buffer[fat_entry & 0x7f]);
+	printk("read_FAT_Entry fat_entry:%#018lx,%#010x\n",fat_entry,buffer[fat_entry & 0x7f]);
     brelease(buf);
 	return buffer[fat_entry & 0x7f] & 0x0fffffff;  //FAT表项的值只占用低28位，高4位是保留位，不用于存储数据
 }
@@ -35,7 +37,7 @@ unsigned int read_FAT_Entry_test(unsigned int fat_entry)
 {
     //512/4 = 128个fat项,得到fat表项所在扇区
 	Buf *buf = bread(1, FirstFAT1Sector + (fat_entry >> 7));
-	printk("DISK1_FAT32_read_FAT_Entry fat_entry:%#018lx,%#010x\n",fat_entry,buf->data[fat_entry & 0x7f]);
+	printk("read_FAT_Entry fat_entry:%#018lx,%#010x\n",fat_entry,buf->data[fat_entry & 0x7f]);
     unsigned int result = (unsigned int)buf->data[fat_entry & 0x7f] & 0x0fffffff; //& 0x7f相当于对128取余，得到fat表项在本扇区内偏移量
     //FAT表项的值只占用低28位，高4位是保留位，不用于存储数据
     brelease(buf);
@@ -157,11 +159,63 @@ long FAT32_open(struct index_node * inode,struct file * filp)
 
 
 long FAT32_close(struct index_node * inode,struct file * filp)
-{}
+{
+	return 1;
+}
 
 
 long FAT32_read(struct file * filp,char * buf,unsigned long count,long * position)
-{}
+{
+	struct FAT32_inode_info * finode = filp->dentry->dir_inode->private_index_info;
+	struct FAT32_sb_info * fsbi = filp->dentry->dir_inode->sb->private_sb_info;
+
+	unsigned int read_size = 0;
+	unsigned long cluster = finode->first_cluster;
+	unsigned long sector = 0;
+	int i,length = 0;
+	long retval = 0;
+	int index = *position / fsbi->bytes_per_cluster;	//位置所在簇
+	long offset = *position % fsbi->bytes_per_cluster;	//位置所在簇内偏移
+	unsigned char * buffer = (char *)alloc_pgtable();
+
+	if(!cluster)
+		return -EFAULT;
+	for(i = 0;i < index;i++)	//取得对应簇号
+		cluster = read_FAT_Entry(fsbi,cluster);
+
+	//index更新为指向读取结束的位置
+	if(*position + count > filp->dentry->dir_inode->file_size)
+		index = count = filp->dentry->dir_inode->file_size - *position;
+	else
+		index = count;
+
+	printk("FAT32_read first_cluster:%d,size:%d,preempt_count:%d\n",finode->first_cluster,filp->dentry->dir_inode->file_size,get_current_task()->count);
+
+	do
+	{
+		sector = fsbi->Data_firstsector + (cluster - 2) * fsbi->sector_per_cluster;
+		buffer = read_more_sector(sector, fsbi->sector_per_cluster, &read_size);
+		if(!buffer)
+		{
+			printk("FAT32 FS(read) read disk ERROR!!!!!!!!!!\n");
+			retval = -EIO;
+			break;
+		}
+		//长度最多只有fsbi->bytes_per_cluster - offset
+		length = index <= fsbi->bytes_per_cluster - offset ? index : fsbi->bytes_per_cluster - offset;
+		memcpy(buf, buffer + offset, length);
+		index -= length;
+		buf += length;
+		offset -= offset;
+		*position += length;
+		//index不为0说明跨越了簇号
+	}while(index && (cluster = read_FAT_Entry(fsbi,cluster)));
+
+	page_free_addr(buffer);
+	if(!index)
+		retval = count;
+	return retval;
+}
 
 
 long FAT32_write(struct file * filp,char * buf,unsigned long count,long * position)

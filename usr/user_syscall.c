@@ -57,3 +57,13 @@ unsigned long open(char *pathname, int flags)
 {
 	return SYSCALL_2(SYS_open, pathname, flags);
 }
+
+unsigned long close(int fd)
+{
+	return SYSCALL_1(SYS_close, fd);
+}
+
+long read(int fd, void *buf, unsigned int count)
+{
+	return SYSCALL_3(SYS_read, fd, buf, count);
+}

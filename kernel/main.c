@@ -69,12 +69,19 @@ int user_main()
 		delay(1000);
 		print("%s: %lu\n", __func__, i++);
 	}*/
-	print("open!\n");
-	u64 fd = open("/busybox",O_RDONLY);
-	print("\n fd = %d\n",fd);
+	//u64 fd = open("/busybox",O_RDONLY);
+	//print("\n fd = %d\n",fd);
+	//int a = close(fd);
+	u64 fd = open("/readme.txt",O_RDONLY);
+	unsigned char *buf = malloc();
+	int num = read(fd, buf, 10);
+	for(int i=0; i<num; i++)
+	{
+		print("%c",buf[i]);
+	}
+	int a = close(fd);
 	while (1)
 	{
-
 	}
 	
 	return 0;

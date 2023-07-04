@@ -35,6 +35,12 @@
         "log.h": "c",
         "test.h": "c",
         "fat32.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "*.tcc": "c",
+        "iosfwd": "c",
+        "istream": "c",
+        "limits": "c",
+        "sstream": "c",
+        "streambuf": "c"
     }
 }
