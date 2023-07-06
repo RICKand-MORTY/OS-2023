@@ -12,5 +12,5 @@
 #define SYS_close           57
 #define SYS_read            63
 #define SYS_write           64
-
+#define SYS_execve          221
 #endif

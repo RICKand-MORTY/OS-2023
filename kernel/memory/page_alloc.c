@@ -2,7 +2,6 @@
 #include "../../lib/printk.h"
 
 
-#define BITMAPS_SIZE ((TOTAL_PAGES / (sizeof(u64) * 8)) + 1)
 
 unsigned long pages_bitmaps[BITMAPS_SIZE];
 unsigned long phy_start_address = 0;
@@ -57,6 +56,169 @@ unsigned long page_alloc()
     printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
     return (phy_start_address + index * sizeof(u64) * 8 + offset * PAGE_SIZE);
 }
+
+//连续分配多页内存
+unsigned long more_page_alloc(int count)
+{
+    unsigned long i=1;
+    int num = 0;
+    int begin = 0;
+    int index = 0;
+    int offset=0;
+    if(count <= 0) 
+    {
+        return 1; 
+    }
+    if(global_free_pages < count) 
+    {
+        return 1; 
+    }
+    printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
+    while (pages_bitmaps[index] == 0xffffffffffffffff) 
+    {
+        index++;
+    }
+    while(pages_bitmaps[index] & i) 
+    {
+        offset++;
+        i = i << 1;
+    }
+    
+    begin = index * sizeof(u64) * 8 + offset; 
+    num = 1; 
+    
+    while(num < count) // 循环直到找到连续的count个页面或者到达位图末尾
+    {
+        offset++;
+        i = i << 1;
+        if(offset == sizeof(u64) * 8) 
+        {
+            index++;
+            offset = 0;
+            i = 1;
+            if(index >= sizeof(pages_bitmaps) / sizeof(u64)) 
+            {
+                break; 
+            }
+        }
+        if(pages_bitmaps[index] & i) 
+        {
+            begin = index * sizeof(u64) * 8 + offset; 
+            num = 1; 
+        }
+        else 
+        {
+            num++;
+        }
+    }
+
+    if(num == count) 
+    {
+        index = begin / (sizeof(u64) * 8); 
+        offset = begin % (sizeof(u64) * 8); 
+        i = 1 << offset; 
+        for(num = 0; num < count; num++) 
+        {
+            pages_bitmaps[index] |= i; 
+            offset++;
+            i = i << 1;
+            if(offset == sizeof(u64) * 8) 
+            {
+                index++;
+                offset = 0;
+                i = 1;
+            }
+        }
+        global_free_pages -= count; 
+        printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
+        return (phy_start_address + begin * PAGE_SIZE); 
+    }
+    else 
+    {
+        return 1;
+    }
+}
+
+int more_page_free(void *buf, unsigned int count)
+{
+    unsigned long i=1;
+    int num = 0;
+    int begin = 0;
+    int index = 0;
+    int offset=0;
+    if(count <= 0) 
+    {
+        return -1; 
+    }
+    if(buf == NULL) 
+    {
+        return -1; 
+    }
+    if((unsigned long)buf < phy_start_address || (unsigned long)buf >= phy_start_address + sizeof(pages_bitmaps) / sizeof(u64) * sizeof(u64) * 8 * PAGE_SIZE) // 检查buf是否在物理内存范围内
+    {
+        //不在有效范围
+        printk("more_page_free: bad address!\n");
+        return -1; 
+    }
+    if((unsigned long)buf % PAGE_SIZE != 0) 
+    {
+        // 检查buf是否对齐到页面边界
+        printk("more_page_free: address not align!\n");
+        return -1; 
+    }
+    
+    begin = ((unsigned long)buf - phy_start_address) / PAGE_SIZE; 
+    index = begin / (sizeof(u64) * 8); 
+    offset = begin % (sizeof(u64) * 8); 
+    i = 1 << offset; 
+    
+    //释放前先检查
+    for(num = 0; num < count; num++) 
+    {
+        if((pages_bitmaps[index] & i) == 0) 
+        {
+            // 如果当前页面对应的位图为0，说明未分配，返回错误
+            printk("more_page_free: pages not be alloced!\n");
+            return -1; 
+        }
+        offset++;
+        i = i << 1;
+        if(offset == sizeof(u64) * 8) 
+        {
+            index++;
+            offset = 0;
+            i = 1;
+            if(index >= sizeof(pages_bitmaps) / sizeof(u64)) 
+            {
+                // 如果所有位图都已经处理完毕，说明超出范围，返回错误
+                printk("more_page_free: out of limit!\n");
+                return -1; 
+            }
+        }
+    }
+
+    index = begin / (sizeof(u64) * 8); 
+    offset = begin % (sizeof(u64) * 8); 
+    i = 1 << offset; 
+    
+    for(num = 0; num < count; num++) 
+    {
+        pages_bitmaps[index] &= ~i; 
+        offset++;
+        i = i << 1;
+        if(offset == sizeof(u64) * 8) 
+        {
+            index++;
+            offset = 0;
+            i = 1;
+        }
+    }
+    
+    global_free_pages += count; 
+    
+    return 0; 
+}
+
 
 int page_free(unsigned int count)
 {

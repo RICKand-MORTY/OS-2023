@@ -4,7 +4,7 @@
 #include <trap.h>
 
 #define TOTAL_SYSCALLS      500
-
+#define MAXARG              32
 
 typedef long (*syscall_fun)(struct pt_regs *);
 

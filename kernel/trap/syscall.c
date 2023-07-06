@@ -9,6 +9,7 @@
 #include <sysflags.h>
 #include <error.h>
 #include <buf.h>
+#include <elf.h>
 
 void syscall_handler(struct pt_regs *regs)
 {
@@ -224,6 +225,128 @@ long callback_sys_malloc()
 	return alloc_pgtable();
 }
 
+int exec(char* path, char* argv, char* envp)
+{
+	struct dir_entry* dentry = NULL;
+	struct file * filp = NULL;
+	unsigned long filesize = 0;
+	int error = 0;
+	char *buf = NULL;
+	Elf64_Ehdr *elf_head = NULL;
+	char * exe_page = 0;
+	int i = 0, j = 0;
+	Elf64_Phdr *elf_segment = NULL;
+	Elf64_Shdr *elf_section_head = NULL;
+	unsigned int section_offset = 0;
+	unsigned int read_count = 0;
+	unsigned int need_page = 0;
+	unsigned long buf_size = 0;
+
+	//find the file
+	dentry = path_walk(path, 0);
+	if(dentry == NULL)
+	{
+		error = -ENOENT;
+		goto bad;
+	}
+	if(dentry->dir_inode->attribute == FS_ATTR_DIR)
+	{
+		printk("%s is a diretory!\n", path);
+		error = -EISDIR;
+		goto bad;
+	}
+
+	//ready to read the file from disk to buf
+	filp = alloc_pgtable();
+	if(filp == 1)
+	{
+		error = -ENOMEM;
+		goto bad;
+	}
+	filp->dentry = dentry;
+	filp->f_ops = dentry->dir_inode->f_ops;
+	filesize = dentry->dir_inode->file_size;
+	if(filesize == 0)
+	{
+		printk("%s file size is 0!\n", path);
+		error = -ENOEXEC;
+		goto bad;
+	}
+	read_count = ((filesize + BSIZE - 1) & ~(BSIZE -1)) / BSIZE;				//取整
+	need_page = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
+	buf = (char *)more_page_alloc(need_page);
+	if(buf == 1)
+	{
+		error = -ENOMEM;
+		goto bad;
+	}
+	memset((void *)buf, 0, PAGE_SIZE * need_page);
+	if(filp->f_ops && filp->f_ops->read)
+		error = filp->f_ops->read(filp, buf, read_count, &filp->position);
+	if(error != 1)
+	{
+		error = -EFAULT;
+		goto bad;
+	}
+
+	//get elf head
+	elf_head = (Elf64_Ehdr *)buf;
+	if(strcmp(elf_head->e_ident, ELFMAG))
+	{
+		error = -ENOEXEC;
+		goto bad;
+	}
+
+	//get and load elf section to memory
+	exe_page = (char *)more_page_alloc(need_page);
+	if(exe_page == 1)
+	{
+		error = ENOMEM;
+		goto bad;
+	}
+	memset((void *)exe_page, 0, PAGE_SIZE * need_page);
+	elf_section_head = (Elf64_Shdr *)((char *)elf_head + elf_head->e_shoff);
+	for(i = 0; i < elf_head->e_shnum; i++)
+	{
+		elf_section_head = (Elf64_Shdr *)((char *)elf_head + elf_head->e_shoff + section_offset);
+		if(elf_section_head->sh_type != ET_REL)
+		{
+			error = -ENOEXEC;
+			goto bad;
+		}
+		if(elf_section_head->sh_addr % PAGE_SIZE)
+		{
+			
+		}
+	}
+
+
+	bad:
+		if(filp !=0 && filp != 1)
+		{
+			page_free_addr(filp);
+		}
+		if(buf !=0 && buf != 1)
+		{
+			more_page_free(buf, need_page);
+		}
+		if(exe_page != 0 && exe_page != 1)
+		{
+			more_page_free(exe_page, need_page);
+		}
+		return error;
+}
+
+long callback_sys_execve(struct pt_regs *regs)
+{
+	char *path = (char *)regs->a0;
+	char *argv = (char *)regs->a1;
+	char *envp = (char *)regs->a2;
+
+	int ret = exec(path, argv, envp);
+	return ret;
+}
+
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
 
 const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
@@ -237,4 +360,5 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_close, sys_close)
 	__SYSCALL(SYS_read, sys_read)
 	__SYSCALL(SYS_write, sys_write)
+	__SYSCALL(SYS_execve, sys_execve)
 };

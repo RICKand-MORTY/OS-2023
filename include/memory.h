@@ -9,7 +9,7 @@ extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
 extern char _pgd_page_begin[], _pgd_page_end[];
 
-
+#define BITMAPS_SIZE ((TOTAL_PAGES / (sizeof(u64) * 8)) + 1)
 #define RAM_ADDR    0x80000000UL
 #define TOTAL_MEM   0x8000000UL       /*128M(see makefile)*/
 
@@ -30,6 +30,8 @@ void mem_init(u64 mem_start, u64 mem_end);
 unsigned long page_alloc();
 int page_free(unsigned int count);
 int page_free_addr(unsigned long addr);
+unsigned long more_page_alloc(int count);
+int more_page_free(void *buf, unsigned int count);
 
 //mmu_map.c
 unsigned long alloc_pgtable();
@@ -65,4 +67,5 @@ void create_pte_mapping(
     u64 (*alloc_func)(void),        
     u64 flags                  
 );
+extern unsigned long pages_bitmaps[BITMAPS_SIZE];
 #endif
