@@ -86,4 +86,93 @@ typedef struct elf64_shdr {
   Elf64_Xword sh_entsize;	/* Entry size if section holds table */
 } Elf64_Shdr;
 
+/**
+ * Exported symbol struct
+ */
+typedef struct {
+  const char *name; /*!< Name of symbol */
+  void *ptr; /*!< Pointer of symbol in memory */
+} ELFSymbol_t;
+
+/**
+ * Environment for execution
+ */
+typedef struct ELFEnv {
+  const ELFSymbol_t *exported; /*!< Pointer to exported symbols array */
+  unsigned int exported_size; /*!< Elements on exported symbol array */
+} ELFEnv_t;
+
+
+typedef struct loader_env {
+  int fd;
+  const struct ELFEnv * env;
+} loader_env_t;
+
+typedef struct {
+  void *data;
+  int secIdx;                   //section index
+  unsigned long relSecIdx;      //index in relocation
+} ELFSection_t;
+
+//exe info
+typedef struct ELFExec {
+
+  loader_env_t user_data;
+
+  unsigned long sections;
+  unsigned long sectionTable;
+  unsigned long sectionTableStrings;
+
+  unsigned long symbolCount;
+  unsigned long symbolTable;
+  unsigned long symbolTableStrings;
+  unsigned long entry;
+
+  ELFSection_t text;
+  ELFSection_t rodata;
+  ELFSection_t data;
+  ELFSection_t bss;
+  ELFSection_t init_array;
+  ELFSection_t fini_array;
+  ELFSection_t sdram_rodata;
+  ELFSection_t sdram_data;
+  ELFSection_t sdram_bss;
+
+  unsigned int fini_array_size;
+
+} ELFExec_t;
+
+//use for searching each section
+typedef enum {
+  FoundERROR = 0,
+  FoundSymTab = (1 << 0),
+  FoundStrTab = (1 << 2),
+  FoundText = (1 << 3),
+  FoundRodata = (1 << 4),
+  FoundData = (1 << 5),
+  FoundBss = (1 << 6),
+  FoundRelText = (1 << 7),
+  FoundRelRodata = (1 << 8),
+  FoundRelData = (1 << 9),
+  FoundRelBss = (1 << 10),
+  FoundInitArray = (1 << 11),
+  FoundRelInitArray = (1 << 12),
+  FoundFiniArray = (1 << 13),
+  FoundRelFiniArray = (1 << 14),
+  FoundSDRamRodata = (1 << 15),
+  FoundSDRamData = (1 << 16),
+  FoundSDRamBss = (1 << 17),
+  FoundRelSDRamRodata = (1 << 18),
+  FoundRelSDRamData = (1 << 19),
+  FoundRelSDRamBss = (1 << 20),
+  FoundValid = FoundSymTab | FoundStrTab,
+  FoundExec = FoundValid | FoundText,
+  FoundAll = FoundSymTab | FoundStrTab | FoundText | FoundRodata | FoundData
+      | FoundBss | FoundRelText | FoundRelRodata | FoundRelData | FoundRelBss
+      | FoundInitArray | FoundRelInitArray
+      | FoundFiniArray | FoundRelFiniArray
+} FindFlags_t;
+
+
+
 #endif
