@@ -72,3 +72,9 @@ long write(int fd, void *buf, unsigned int count)
 {
 	return SYSCALL_3(SYS_write, fd, buf, count);
 }
+
+//设置文件指针位置
+long lseek(int fd, long offset, int whereat)
+{
+	return SYSCALL_3(SYS_lseek, fd, offset, whereat);
+}

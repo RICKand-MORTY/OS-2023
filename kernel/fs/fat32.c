@@ -6,6 +6,7 @@
 #include <VFS.h>
 #include <error.h>
 #include <process.h>
+#include <sysflags.h>
 
 //#define QEMU
 
@@ -337,7 +338,32 @@ long FAT32_write(struct file * filp,char * buf,unsigned long count,long * positi
 
 
 long FAT32_lseek(struct file * filp,long offset,long origin)
-{}
+{
+	struct index_node *inode = filp->dentry->dir_inode;
+	long pos = 0;
+	switch (origin)
+	{
+	case SEEK_SET:
+		pos = offset;
+		break;
+	case SEEK_CUR:
+		pos = filp->position + offset;
+		break;
+	case SEEK_END:
+		pos = filp->dentry->dir_inode->file_size + offset;
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+	if(pos < 0 || pos > filp->dentry->dir_inode->file_size)
+	{
+		return -EOVERFLOW;
+	}
+	filp->position = pos;
+	printk("FAT32 lseek alert position:%d\n", filp->position);
+	return pos;
+}
 
 
 long FAT32_ioctl(struct index_node * inode,struct file * filp,unsigned long cmd,unsigned long arg)

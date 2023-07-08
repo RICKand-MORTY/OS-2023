@@ -41,6 +41,7 @@
         "istream": "c",
         "limits": "c",
         "sstream": "c",
-        "streambuf": "c"
+        "streambuf": "c",
+        "sysflags.h": "c"
     }
 }

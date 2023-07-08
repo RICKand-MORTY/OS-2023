@@ -215,6 +215,28 @@ long callback_sys_write(struct pt_regs *regs)
 	}
 }
 
+//设置文件描述符的访问位置
+long callback_sys_lseek(struct pt_regs *regs)
+{
+	int fd = (int)regs->a0;
+	long offset = (long)regs->a1;
+	int whereat = (int)regs->a2;
+
+	struct file * filp = get_current_task()->file_struct[fd];
+	long ret = 0;
+
+	printk("sys_lseek:%d\n", fd);
+	if(fd < 0 || fd >= TASK_FILE_MAX)
+		return -EBADF;
+	if(whereat < 0 || whereat >= SEEK_MAX)
+		return -EINVAL;
+	if(filp->f_ops && filp->f_ops->lseek)
+	{
+		ret = filp->f_ops->lseek(filp, offset, whereat);
+	}
+	return ret;
+}
+
 long callback_sys_openat(int fd, char *filename, int flags, int mode)
 {
 	return 1;
@@ -361,4 +383,5 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_read, sys_read)
 	__SYSCALL(SYS_write, sys_write)
 	__SYSCALL(SYS_execve, sys_execve)
+	__SYSCALL(SYS_lseek, sys_lseek)
 };

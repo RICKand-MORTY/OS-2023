@@ -29,12 +29,12 @@ spinlock print_lock = {.lock = 0};
 
 int user_thread_1(void *arg)
 {
-	unsigned char abc[] = "hello RISCV!!!\n";
+	char *buf[100];
 	print("this is user_thread_1\n");
     u64 fd = open("/busybox_cmd.txt",O_APPEND);
-	print("buflen = %d\n",strlen(abc));
-	int aa = write(fd, abc, strlen(abc));
-	print("\n\n");
+	long off = lseek(fd, 2, SEEK_SET);
+	long err = read(fd, buf, 5);
+	print("\n%s\n", buf);
 	int a = close(fd);
 	while (1)
 	{
