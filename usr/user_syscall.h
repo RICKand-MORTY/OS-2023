@@ -25,4 +25,5 @@ unsigned long close(int fd);
 long read(int fd, void *buf, unsigned int count);
 long write(int fd, void *buf, unsigned int count);
 long lseek(int fd, long offset, int whereat);
+long exec(char *path, char *argv, char *envp);
 #endif

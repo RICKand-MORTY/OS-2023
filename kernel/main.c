@@ -36,6 +36,7 @@ int user_thread_1(void *arg)
 	long err = read(fd, buf, 5);
 	print("\n%s\n", buf);
 	int a = close(fd);
+	exec("/busybox", NULL, NULL);
 	while (1)
 	{
 	}

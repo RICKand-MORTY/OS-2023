@@ -78,3 +78,8 @@ long lseek(int fd, long offset, int whereat)
 {
 	return SYSCALL_3(SYS_lseek, fd, offset, whereat);
 }
+
+long exec(char *path, char *argv, char *envp)
+{
+	return SYSCALL_3(SYS_execve, path, argv, envp);
+}

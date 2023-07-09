@@ -28,8 +28,7 @@
 #define	EHOSTUNREACH	23		/* Host is unreachable */
 #define	EIDRM			24		/* Identifier removed */
 #define	EILSEQ			25		/* Illegal byte sequence */
-#define	EINPROGRESS		26		/* Operation in progress or O_NONBLOCK is set for the socket file descriptor and the connection cannot be
-immediately established */
+#define	EINPROGRESS		26		/* Operation in progress or O_NONBLOCK is set for the socket file descriptor and the connection cannot be immediately established */
 #define	EINTR			27		/* Interrupted function call */
 #define	EINVAL			28		/* Invalid argument */
 #define	EIO				29		/* Input/output error */

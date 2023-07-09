@@ -10,6 +10,7 @@
 #include <error.h>
 #include <buf.h>
 #include <elf.h>
+#include <elf_loader.h>
 
 void syscall_handler(struct pt_regs *regs)
 {
@@ -54,11 +55,8 @@ long callback_sys_clone(struct pt_regs *regs)
 {
 	return do_fork(regs->a0, regs->a1,regs->a2);
 }
-
-long callback_sys_open(struct pt_regs *regs)
+int fopen(char *pathname, int flags)
 {
-	char *pathname = (char *)regs->a0;
-	int flags = (int)regs->a1;
 	int size = 0;
 	char * path = NULL;
 	long pathlen = 0;
@@ -140,6 +138,20 @@ long callback_sys_open(struct pt_regs *regs)
 	f[fd] = filp;
 
 	return fd;
+}
+long callback_sys_open(struct pt_regs *regs)
+{
+	char *pathname = (char *)regs->a0;
+	int flags = (int)regs->a1;
+	long fd = fopen(pathname, flags);
+	if(fd < 0)
+	{
+		return -1;
+	}
+	else
+	{
+		return fd;
+	}
 }
 
 long callback_sys_close(struct pt_regs *regs)
@@ -247,7 +259,7 @@ long callback_sys_malloc()
 	return alloc_pgtable();
 }
 
-int exec(char* path, char* argv, char* envp)
+long do_exec(char* path, char* argv, char* envp)
 {
 	struct dir_entry* dentry = NULL;
 	struct file * filp = NULL;
@@ -365,8 +377,23 @@ long callback_sys_execve(struct pt_regs *regs)
 	char *argv = (char *)regs->a1;
 	char *envp = (char *)regs->a2;
 
-	int ret = exec(path, argv, envp);
-	return ret;
+	loader_env_t env;
+	ELFExec_t **exec_ptr;
+	unsigned int need_page = 0;
+	unsigned long filesize = 0;
+	struct file * filp =NULL;
+	int fd = fopen(path, 0);
+	if(fd < 0)
+	{
+		return -1;
+	}
+	filp = get_current_task()->file_struct[fd];
+	filesize = filp->dentry->dir_inode->file_size;
+	need_page = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
+	memset(&env, NULL, sizeof(env));
+	exec_ptr = alloc_pgtable();
+	load_elf(path, env, exec_ptr, NULL, NULL, fd);
+
 }
 
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,

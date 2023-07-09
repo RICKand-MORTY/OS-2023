@@ -1,9 +1,9 @@
 #ifndef _ELF_H
 #define _ELF_H
 
-
-#define EI_NIDENT	16
-#define	ELFMAG		"\177ELF"
+#define MAXARGSIZE      32
+#define EI_NIDENT	      16
+#define	ELFMAG		      "\177ELF"
 
 /*e_type*/
 #define ET_NONE              0           //No file type
@@ -114,10 +114,16 @@ typedef struct {
   unsigned long relSecIdx;      //index in relocation
 } ELFSection_t;
 
+
 //exe info
 typedef struct ELFExec {
 
   loader_env_t user_data;
+
+  char * argv[MAXARGSIZE];
+  int argv_size;
+  char * envp[MAXARGSIZE];
+  int envp_size;
 
   unsigned long sections;
   unsigned long sectionTable;

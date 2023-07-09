@@ -42,6 +42,8 @@
         "limits": "c",
         "sstream": "c",
         "streambuf": "c",
-        "sysflags.h": "c"
+        "sysflags.h": "c",
+        "elf.h": "c",
+        "vfs.h": "c"
     }
 }
