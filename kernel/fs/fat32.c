@@ -10,6 +10,11 @@
 
 //#define QEMU
 
+#define CACHE_SIZE (BSIZE) 
+unsigned long cache[CACHE_SIZE]; // 缓存数组
+int cache_index = 0; // 缓存索引
+int cache_valid = 0; // 缓存有效标志
+
 struct super_block * root_sb = NULL;
 struct Disk_Partition_Table mbr;
 struct FAT32_BootSector fat32_boot;
@@ -28,7 +33,7 @@ unsigned int read_FAT_Entry(struct FAT32_sb_info * fsbi, unsigned int fat_entry)
 	Buf *buf = bread(1, fsbi->FAT1_firstsector + (fat_entry >> 7));
 	memcpy(buffer, buf->data, BSIZE);
 	//& 0x7f相当于对128取余，得到fat表项在本扇区内偏移量
-	printk("read_FAT_Entry fat_entry:%#018lx,%#010x\n",fat_entry,buffer[fat_entry & 0x7f]);
+	//printk("read_FAT_Entry fat_entry:%#018lx,%#010x\n",fat_entry,buffer[fat_entry & 0x7f]);
     brelease(buf);
 	return buffer[fat_entry & 0x7f] & 0x0fffffff;  //FAT表项的值只占用低28位，高4位是保留位，不用于存储数据
 }
@@ -177,12 +182,29 @@ long FAT32_read(struct file * filp,char * buf,unsigned long count,long * positio
 	long retval = 0;
 	int index = *position / fsbi->bytes_per_cluster;	//位置所在簇
 	long offset = *position % fsbi->bytes_per_cluster;	//位置所在簇内偏移
-	unsigned char * buffer = (char *)alloc_pgtable();
+	unsigned char * buffer = NULL;
 
 	if(!cluster)
 		return -EFAULT;
-	for(i = 0;i < index;i++)	//取得对应簇号
-		cluster = read_FAT_Entry(fsbi,cluster);
+	/*for(i = 0;i < index;i++)	//取得对应簇号
+	{
+		if(cache_valid && i > cache_index && cache[i%BSIZE] ) // 如果缓存有效且索引在缓存范围内，直接从缓存中获取簇号
+			cluster = cache[i%BSIZE];
+		else // 否则，调用read_FAT_Entry函数，并将结果存入缓存中
+		{
+			cluster = read_FAT_Entry(fsbi,cluster);
+			if(cache_index < CACHE_SIZE) // 如果缓存未满，将簇号添加到缓存末尾
+			cache[cache_index++] = cluster;
+			else // 如果缓存已满，将整个缓存向前移动一位，丢弃最旧的簇号，将新的簇号添加到缓存末尾
+			{
+			memmove(cache, cache + 1, (CACHE_SIZE - 1) * sizeof(unsigned long));
+			cache[CACHE_SIZE - 1] = cluster;
+			}
+			cache_valid = 1; // 设置缓存有效标志
+ 		}
+	}*/
+	for(i = 0;i < index;i++)
+	cluster = read_FAT_Entry(fsbi,cluster);
 
 	//index更新为指向读取结束的位置
 	if(*position + count > filp->dentry->dir_inode->file_size)
@@ -1188,7 +1210,7 @@ void FAT32_init()
 	struct dir_entry * dentry = NULL;
 	struct Disk_Partition_Table DPT = {0};
 	memset(&DPT, 0, sizeof(DPT));
-
+	memset(cache, 0, sizeof(unsigned long) * BSIZE);
 	register_filesystem(&FAT32_fs_type);
 
 	#ifdef QEMU

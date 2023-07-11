@@ -39,6 +39,8 @@ int user_thread_1(void *arg)
 	exec("/busybox", NULL, NULL);
 	while (1)
 	{
+		delay(1000);
+		print("2");
 	}
 	
 }
@@ -80,9 +82,11 @@ int user_main()
 	//u64 fd = open("/busybox",O_RDONLY);
 	//print("\n fd = %d\n",fd);
 	//int a = close(fd);
-	
+
 	while (1)
 	{
+		//delay(1000);
+		//print("1");
 	}
 	
 	return 0;

@@ -108,6 +108,7 @@ int fopen(char *pathname, int flags)
 	filp->dentry = dentry;
 	filp->mode = flags;
 	filp->f_ops = dentry->dir_inode->f_ops;
+	//filp->dentry->dir_inode->sb = root_sb;
 	if(filp->f_ops && filp->f_ops->open)
 		error = filp->f_ops->open(dentry->dir_inode,filp);
 	if(error != 1)
@@ -378,11 +379,12 @@ long callback_sys_execve(struct pt_regs *regs)
 	char *envp = (char *)regs->a2;
 
 	loader_env_t env;
-	ELFExec_t **exec_ptr;
+	ELFExec_t *exec;
 	unsigned int need_page = 0;
 	unsigned long filesize = 0;
 	struct file * filp =NULL;
 	int fd = fopen(path, 0);
+
 	if(fd < 0)
 	{
 		return -1;
@@ -391,8 +393,13 @@ long callback_sys_execve(struct pt_regs *regs)
 	filesize = filp->dentry->dir_inode->file_size;
 	need_page = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
 	memset(&env, NULL, sizeof(env));
-	exec_ptr = alloc_pgtable();
-	load_elf(path, env, exec_ptr, NULL, NULL, fd);
+	exec = more_page_alloc(need_page);
+	if(exec == 1)
+	{
+		return -1;
+	}
+	exec->file_size = filesize;
+	load_elf(path, env, exec, NULL, NULL, fd);
 
 }
 

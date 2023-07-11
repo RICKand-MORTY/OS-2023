@@ -112,8 +112,19 @@ typedef struct {
   void *data;
   int secIdx;                   //section index
   unsigned long relSecIdx;      //index in relocation
+  unsigned long sec_size;       //size of section(data len)
 } ELFSection_t;
 
+/* ELF-64 Symbol Table Entry */
+typedef struct
+{
+  Elf64_Word st_name; /* Symbol name */
+  unsigned char st_info; /* Type and Binding attributes */
+  unsigned char st_other; /* Reserved */
+  Elf64_Half st_shndx; /* Section table index */
+  Elf64_Addr st_value; /* Symbol value */
+  Elf64_Xword st_size; /* Size of object (e.g., common) */
+} Elf64_Sym;
 
 //exe info
 typedef struct ELFExec {
@@ -125,6 +136,7 @@ typedef struct ELFExec {
   char * envp[MAXARGSIZE];
   int envp_size;
 
+  unsigned long file_size;
   unsigned long sections;
   unsigned long sectionTable;
   unsigned long sectionTableStrings;
