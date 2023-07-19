@@ -94,15 +94,17 @@ unsigned long write_FAT_Entry_test(unsigned int fat_entry,unsigned int value)
 
 /*
 如果一个簇有多个扇区，通过该函数读取簇，返回一个存放数据的缓冲区,失败返回NULL
-数据量要小于一页
 block: 起始扇区
 count: 要读取的扇区数量
 size:  传出参数，返回缓冲区的大小
 */
-unsigned char* read_more_sector(unsigned int block, unsigned int count, unsigned int *size)
+unsigned char* read_more_sector(unsigned int block, unsigned int count, unsigned long *size)
 {
 	Buf *buffer = NULL;
-	unsigned char * buf = alloc_pgtable();
+	unsigned long bytes = (count * BSIZE);
+	int needpage = ((bytes + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE; 
+	unsigned char * buf = more_page_alloc(needpage);
+	memset(buf, 0, needpage * PAGE_SIZE);
 	unsigned int count_sector = 0;
 	unsigned int buflen = 0;
 	//read enough sector,save in buf
@@ -111,7 +113,7 @@ unsigned char* read_more_sector(unsigned int block, unsigned int count, unsigned
 		buffer = bread(1, block + count_sector);
 		if(buffer == NULL)
 		{
-			page_free_addr(buf);
+			more_page_free(buf, needpage);
 			return NULL;
 		}
 		else
@@ -174,8 +176,8 @@ long FAT32_read(struct file * filp,char * buf,unsigned long count,long * positio
 {
 	struct FAT32_inode_info * finode = filp->dentry->dir_inode->private_index_info;
 	struct FAT32_sb_info * fsbi = filp->dentry->dir_inode->sb->private_sb_info;
-
-	unsigned int read_size = 0;
+	int needpage = 0;
+	unsigned long read_size = 0;
 	unsigned long cluster = finode->first_cluster;
 	unsigned long sector = 0;
 	int i,length = 0;
@@ -231,10 +233,12 @@ long FAT32_read(struct file * filp,char * buf,unsigned long count,long * positio
 		buf += length;
 		offset -= offset;
 		*position += length;
+		needpage = ((read_size + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
+		more_page_free(buffer, needpage);
 		//index不为0说明跨越了簇号
 	}while(index && (cluster = read_FAT_Entry(fsbi,cluster)));
 
-	page_free_addr(buffer);
+	
 	if(!index)
 		retval = count;
 	return retval;

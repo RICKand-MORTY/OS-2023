@@ -7,11 +7,14 @@
 #include <VFS.h>
 #include <sysflags.h>
 #include <error.h>
+#include "../../usr/user_syscall.h"
 
 #define LOADER_SEEK_SET(filp, off)   filp->f_ops->lseek(filp, off, SEEK_SET)
 #define LOADER_SEEK_CUR(filp)        filp->f_ops->lseek(filp, 0, SEEK_CUR)
 #define IS_FLAGS_SET(v, m)           ((v&m) == m)
 #define LOADER_MAX_SYM_LENGTH        33
+
+typedef void (entry_t)(void);
 
 /*
 读取段表头存入h中，失败返回-1，成功返回0
@@ -39,7 +42,7 @@ static int readSectionName(ELFExec_t *e, long off, char *buf, unsigned long max,
   int ret = -1;
   long offset = e->sectionTableStrings + off;
   long old = LOADER_SEEK_CUR(filp);
-  if(LOADER_SEEK_SET(filp, off) < 0)
+  if(LOADER_SEEK_SET(filp, offset) < 0)
   {
     return -1;
   }
@@ -140,6 +143,8 @@ static int placeInfo(ELFExec_t *e, Elf64_Shdr *sh, const char *name, int n, stru
     if (loadSecData(e, &e->text, sh, filp) == -1)
       return FoundERROR;
     e->text.secIdx = n;
+    e->entry = (char *)e->entry - sh->sh_addr;
+    e->text.sec_size = sh->sh_size;
     return FoundText;
   } else if (!strcmp(name, ".rodata")) {
     if (loadSecData(e, &e->rodata, sh, filp) == -1)
@@ -203,6 +208,13 @@ static int placeInfo(ELFExec_t *e, Elf64_Shdr *sh, const char *name, int n, stru
   } else if (!strcmp(name, ".rel.fini_array")) {
     e->fini_array.relSecIdx = n;
     return FoundRelFiniArray;
+  } else if (!strcmp(name, ".sdata")){
+    if (loadSecData(e, &e->sdata, sh, filp) == -1)
+    {
+      e->sdata.secIdx = n;
+      e->sdata.sec_size = sh->sh_size;
+      return FoundSdata;
+    }
   }
   return 0;
 }
@@ -229,6 +241,8 @@ static int loadSymbols(ELFExec_t *e, struct file *filp)
     if (IS_FLAGS_SET(founded, FoundAll))
       return FoundAll;
   }
+  printk("load finish!\n");
+  return founded;
 }
 
 //初始化elf文件，读出字符串所在段,成功返回0
@@ -298,17 +312,129 @@ static void freeElf(ELFExec_t *e) {
   freeSection(&e->fini_array);
 }
 
-int load_elf(char *path, loader_env_t user_data, ELFExec_t *exec,char* argv, char* envp, int fd)
+//执行.init_array的每一个初始化函数
+static void do_init(ELFExec_t *e, struct file * filp)
+{
+  Elf64_Shdr sh;
+  if(e->init_array.data)
+  {
+    printk("Processing section .init_array.\n");
+    if(readSecHeader(e, e->init_array.relSecIdx, &sh, filp) != 0)
+    {
+      printk("Error reading section header");
+      return;
+    }
+    entry_t **entry = (entry_t**) (e->init_array.data);
+    int i;
+    int n = sh.sh_size >> 3;    //64位一项8字节
+    for(i=0;i<n;i++) 
+    {
+      printk("Processing .init_array[%d] : %08x->%08x\n", i, (int)entry, (int)*entry);
+      (*entry)();
+      entry++;
+    }
+    printk("Processing section .init_array finish!\n");
+  }
+  else
+  {
+    printk("No section: .init_array.\n");
+  }
+}
+
+
+
+//执行fini_array中的函数
+static void do_fini(ELFExec_t *e, struct file * filp)
+{
+  if (e->fini_array.data) {
+    entry_t **entry = (entry_t**) (e->fini_array.data);
+    int i;
+    int n = e->fini_array_size >> 2;
+    for(i=0;i<n;i++) {
+      printk("Processing .fini_array[%d] : %08x->%08x\n", i, (int)entry, (int)*entry);
+      (*entry)();
+      entry++;
+    }
+  } 
+  else
+  {
+    printk("No .fini_array");
+  }
+}
+
+//卸载elf
+int unload_elf(ELFExec_t *exec, int exec_page_size, struct file * filp) 
+{
+  do_fini(exec, filp);
+  freeElf(exec);
+  more_page_free(exec, exec_page_size);
+  return 0;
+}
+//执行elf文件,成功返回0,失败返回-1
+int jumpTo(ELFExec_t *e) 
+{
+  void * stack = NULL;
+  if (e->entry != 1) {
+    entry_t * entry = (entry_t*) (e->text.data + e->entry);
+    char * addr = (char *)(e->text.data + e->entry);
+    print("elf running now!\n\n");
+    /*for(int i=0;i<e->text.sec_size;i++)
+    {
+      
+      if(i % 16 == 0)
+      {
+        print("\n");
+      }
+      print("%02x ",*addr);
+      addr++;
+    }*/
+    entry();
+    /*stack = malloc(2); //use for stack
+    memset(stack, 0, PAGE_SIZE * 2);
+    if(stack != 1)
+    {
+      register unsigned long saved = 0;
+      register unsigned long ra = 0;
+      void * tos = stack + PAGE_SIZE * 2;
+      tos = (void *)((unsigned long)tos & ~0xf); // align tos to 16 bytes
+      __asm__ volatile("mv %0, sp\n\t" : "=r" (saved)); // save sp to saved
+      __asm__ volatile("mv %0, ra\n\t" : "=r" (ra)); // save ra to ra
+      __asm__ volatile("mv sp, %0\n\t" : : "r" (tos)); // set sp to tos
+      __asm__ volatile("addi sp, sp, -16\n\t" // allocate stack space
+              "sd %0, 8(sp)\n\t" // store saved to stack
+              "sd %1, 0(sp)\n\t" : : "r" (saved), "r" (ra)); // store ra to stack
+      entry();
+      __asm__ volatile("ld %0, 8(sp)\n\t" // load saved from stack
+              "ld %1, 0(sp)\n\t" // load ra from stack
+              "addi sp, sp, 16\n\t" : "=r" (saved), "=r" (ra)); // deallocate stack space
+      __asm__ volatile("mv sp, %0\n\t" : : "r" (saved)); // restore sp from saved
+      __asm__ volatile("mv ra, %0\n\t" : : "r" (ra)); // restore ra from ra
+      free(stack, 2);
+      print("elf exec finish!\n");
+      return 0;
+      
+    }
+    else
+    {
+      return -1; // allocation failed
+    }*/
+  } 
+  else
+  {
+    print("No entry defined.\n");
+    return -1;
+  }
+}
+
+
+int load_elf(char *path, loader_env_t user_data, ELFExec_t *exec, char* argv, char* envp, int fd)
 {
   struct file * filp = NULL;
   int i = 0;
   int filesize = exec->file_size;
   int needpage = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
-  if (exec == 1) 
-  {
-    printk("allocation failed\n\n");
-    return -1;
-  }
+  needpage = 1;     //debug
+  user_data.fd = fd;
   exec->user_data = user_data;
   if(argv)
   {
@@ -347,9 +473,16 @@ int load_elf(char *path, loader_env_t user_data, ELFExec_t *exec,char* argv, cha
   if (!IS_FLAGS_SET(loadSymbols(exec, filp), FoundValid)) 
   {
     //至少要有符号表和字符串表
-    freeElf(exec);
     more_page_free(exec, needpage);
     return -2;
   }
-  while(1);
+  /*if (relocateSections(exec) != 0) {
+    more_page_free(exec, needpage);
+    return -3;
+  }*/
+  do_init(exec, filp);
+  //jumpTo(exec);
+  //unload_elf(exec, needpage, filp);
+  //more_page_free(exec, needpage);
+  return 0;
 }

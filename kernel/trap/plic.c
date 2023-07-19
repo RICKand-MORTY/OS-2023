@@ -3,6 +3,7 @@
 #include "../../include/csr.h"
 #include "../../include/uart.h"
 
+struct _keyboard keyboard;
 
 //set prority of plic interrupt number
 void plic_set_prority(int irq_num, int pri)
@@ -62,17 +63,21 @@ int handle_uart_irq()
 {
     char c = uart_get();
     int length = 0; 
-    if(c < 0)
+    if(c < 0 || keyboard.len > 256)
     {
         return -1;
     }
     else if (c == '\r')
     {
+        //input end
         printk("\n");
+        keyboard.flag = 1;
         return c;
     }
     else
     {
+        keyboard.buf[keyboard.len] = c;
+        keyboard.len++;
         uart_send(c);
         return 0;
     }

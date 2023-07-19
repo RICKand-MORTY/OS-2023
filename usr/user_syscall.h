@@ -19,7 +19,8 @@ unsigned long print(const char *fmt,...);
 extern int __clone(int (*fn)(void *arg), void *child_stack,
 		int flags, void *arg);
 _u64 clone(int (*thread_callback)(void *arg), void *child_stack, int flag, void *arg);
-_u64 malloc();
+_u64 malloc(int count);
+_u64 free(void * addr, int count);
 unsigned long open(char *pathname, int flags);
 unsigned long close(int fd);
 long read(int fd, void *buf, unsigned int count);

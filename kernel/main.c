@@ -15,6 +15,7 @@
 #include "../usr/user_syscall.h"
 #include <fat32.h>
 #include <sysflags.h>
+#include <elf_loader.h>
 
 extern char _bss_begin[], _bss_end[];
 extern char _text[], _etext[];
@@ -36,22 +37,24 @@ int user_thread_1(void *arg)
 	long err = read(fd, buf, 5);
 	print("\n%s\n", buf);
 	int a = close(fd);
-	exec("/busybox", NULL, NULL);
+	ELFExec_t * e = exec("/busybox", NULL, NULL);
+
 	while (1)
 	{
-		delay(1000);
-		print("2");
+		//delay(1000);
+		//print("2");
 	}
 	
 }
 
 int user_main()
 {
+	unsigned char buf[256];
 	unsigned long child_stack;
 	int ret;
 	unsigned long i = 0;
 	print("this is user_main!\n");
-	child_stack = malloc();
+	child_stack = malloc(1);
 	if (child_stack < 0) {
 		print("cannot allocate memory\n");
 		return -1;
@@ -59,7 +62,7 @@ int user_main()
 
 	print("malloc success 0x%x\n", child_stack);
 
-	child_stack = malloc();
+	child_stack = malloc(1);
 	if (child_stack < 0)
 		print("cannot allocate memory\n");
 
@@ -67,11 +70,21 @@ int user_main()
 
 	print("child_stack 0x%x\n", child_stack);
 
-	ret = clone(&user_thread_1,
+	/*ret = clone(&user_thread_1,
 			(void *)(child_stack + PAGE_SIZE), 0, NULL);
 	if (ret < 0) {
 		print("%s: error while clone\n", __func__);
 		return ret;
+	}*/
+	print("[SH]#:");
+	while(1)
+	{
+		if(keyboard.flag != 1)
+		{
+			continue;
+		}
+		
+
 	}
 
 	/*print("clone done, 0x%lx 0x%lx\n", &user_thread_1, child_stack + PAGE_SIZE);
@@ -82,12 +95,6 @@ int user_main()
 	//u64 fd = open("/busybox",O_RDONLY);
 	//print("\n fd = %d\n",fd);
 	//int a = close(fd);
-
-	while (1)
-	{
-		//delay(1000);
-		//print("1");
-	}
 	
 	return 0;
 }

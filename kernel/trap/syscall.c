@@ -255,9 +255,17 @@ long callback_sys_openat(int fd, char *filename, int flags, int mode)
 	return 1;
 }
 
-long callback_sys_malloc()
+long callback_sys_free(struct pt_regs *regs)
 {
-	return alloc_pgtable();
+	void * addr = regs->a0;
+	int count = regs->a1;
+	return more_page_free(addr, count);
+}
+
+long callback_sys_malloc(struct pt_regs *regs)
+{
+	int need = regs->a0;
+	return more_page_alloc(need);
 }
 
 long do_exec(char* path, char* argv, char* envp)
@@ -310,6 +318,7 @@ long do_exec(char* path, char* argv, char* envp)
 	read_count = ((filesize + BSIZE - 1) & ~(BSIZE -1)) / BSIZE;				//取整
 	need_page = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
 	buf = (char *)more_page_alloc(need_page);
+	memset(buf, 0, need_page * PAGE_SIZE);
 	if(buf == 1)
 	{
 		error = -ENOMEM;
@@ -334,6 +343,7 @@ long do_exec(char* path, char* argv, char* envp)
 
 	//get and load elf section to memory
 	exe_page = (char *)more_page_alloc(need_page);
+	memset(exe_page, 0, need_page * PAGE_SIZE);
 	if(exe_page == 1)
 	{
 		error = ENOMEM;
@@ -393,14 +403,15 @@ long callback_sys_execve(struct pt_regs *regs)
 	filesize = filp->dentry->dir_inode->file_size;
 	need_page = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
 	memset(&env, NULL, sizeof(env));
-	exec = more_page_alloc(need_page);
+	exec = more_page_alloc(1);
+	memset(exec, 0, 1 * PAGE_SIZE);
 	if(exec == 1)
 	{
 		return -1;
 	}
 	exec->file_size = filesize;
 	load_elf(path, env, exec, NULL, NULL, fd);
-
+	return (long)exec;
 }
 
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
@@ -411,6 +422,7 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_sched_yield, sys_sched_yield)
 	__SYSCALL(SYS_clone, sys_clone)
 	__SYSCALL(SYS_MALLOC, sys_malloc)
+	__SYSCALL(SYS_free, sys_free)
 	__SYSCALL(SYS_open, sys_open)
 	__SYSCALL(SYS_openat, sys_openat)
 	__SYSCALL(SYS_close, sys_close)

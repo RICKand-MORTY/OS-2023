@@ -5,6 +5,7 @@
 #define SYS_STDOUT          0
 #define SYS_nanosleep       101
 #define SYS_MALLOC          2
+#define SYS_free            3
 #define SYS_sched_yield     124
 #define SYS_clone           220
 #define SYS_open            55

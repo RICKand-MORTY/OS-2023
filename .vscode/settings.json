@@ -44,6 +44,8 @@
         "streambuf": "c",
         "sysflags.h": "c",
         "elf.h": "c",
-        "vfs.h": "c"
+        "vfs.h": "c",
+        "elf_loader.h": "c",
+        "error.h": "c"
     }
 }

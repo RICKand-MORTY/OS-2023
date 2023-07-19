@@ -21,6 +21,16 @@
 #define U7_CORE 1
 #define CPU_TO_HART(core) ((core)+1)    //U7 core to hart,skip out S7 core
 
+
+struct _keyboard
+{
+    unsigned char buf[256];
+    int flag;
+    unsigned int len;
+};
+
+extern struct _keyboard keyboard;
+
 void plic_set_prority(int irq_num, int pri);
 void plic_switch_irq(int core, int irq_num, bool on_off);
 void handle_plic_irq(struct pt_regs *regs);

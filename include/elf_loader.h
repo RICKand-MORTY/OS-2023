@@ -5,6 +5,7 @@
 #include "elf.h"
 
 
+int jumpTo(ELFExec_t *e);
 int load_elf(char *path, loader_env_t user_data, ELFExec_t **exec_ptr,char* argv, char* envp, int fd);
 static int initElf(ELFExec_t *e);
 #endif

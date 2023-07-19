@@ -108,12 +108,12 @@ typedef struct loader_env {
   const struct ELFEnv * env;
 } loader_env_t;
 
-typedef struct {
+typedef struct  {
   void *data;
   int secIdx;                   //section index
   unsigned long relSecIdx;      //index in relocation
   unsigned long sec_size;       //size of section(data len)
-} ELFSection_t;
+} __attribute__((packed)) ELFSection_t;
 
 /* ELF-64 Symbol Table Entry */
 typedef struct
@@ -149,6 +149,7 @@ typedef struct ELFExec {
   ELFSection_t text;
   ELFSection_t rodata;
   ELFSection_t data;
+  ELFSection_t sdata;
   ELFSection_t bss;
   ELFSection_t init_array;
   ELFSection_t fini_array;
@@ -158,7 +159,7 @@ typedef struct ELFExec {
 
   unsigned int fini_array_size;
 
-} ELFExec_t;
+} __attribute__((packed)) ELFExec_t;
 
 //use for searching each section
 typedef enum {
@@ -183,6 +184,7 @@ typedef enum {
   FoundRelSDRamRodata = (1 << 18),
   FoundRelSDRamData = (1 << 19),
   FoundRelSDRamBss = (1 << 20),
+  FoundSdata= (1 << 21),
   FoundValid = FoundSymTab | FoundStrTab,
   FoundExec = FoundValid | FoundText,
   FoundAll = FoundSymTab | FoundStrTab | FoundText | FoundRodata | FoundData

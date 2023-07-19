@@ -3,6 +3,7 @@
 #include "../lib/printk.h"
 #include "syscall_num.h"
 #include <process.h>
+#include <elf_loader.h>
 
 //char buf[4096]={0};
 
@@ -41,9 +42,14 @@ _u64 clone(int (*thread_callback)(void *arg), void *child_stack, int flag, void 
 	return __clone(thread_callback, child_stack, flag, arg);
 }
 
-_u64 malloc()
+_u64 malloc(int count)
 {
-	return SYSCALL_0(SYS_MALLOC);
+	return SYSCALL_1(SYS_MALLOC, count);
+}
+
+_u64 free(void * addr, int count)
+{
+	return SYSCALL_2(SYS_free, addr, count);
 }
 
 //not achieve
@@ -81,5 +87,13 @@ long lseek(int fd, long offset, int whereat)
 
 long exec(char *path, char *argv, char *envp)
 {
-	return SYSCALL_3(SYS_execve, path, argv, envp);
+	ELFExec_t *exec = NULL;
+	exec = SYSCALL_3(SYS_execve, path, argv, envp);
+	if(jumpTo(exec))
+	{
+		return -1;
+	}
+	print("exec finish!\n");
+	return 0;
+	 
 }
