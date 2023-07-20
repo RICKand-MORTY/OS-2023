@@ -96,10 +96,11 @@ int fopen(char *pathname, int flags)
 		printk("can't find %s\n", pathname);
 		return -ENOENT;
 	}
-	if(dentry->dir_inode->attribute == FS_ATTR_DIR && flags & O_DIRECTORY == 0)
-	{
+	if((flags & O_DIRECTORY) && (dentry->dir_inode->attribute != FS_ATTR_DIR))
+		return -ENOTDIR;
+	if(!(flags & O_DIRECTORY) && (dentry->dir_inode->attribute == FS_ATTR_DIR))
 		return -EISDIR;
-	}
+	
 	filp = alloc_pgtable();
 	if(filp == 1)
 	{
@@ -413,6 +414,30 @@ long callback_sys_execve(struct pt_regs *regs)
 	load_elf(path, env, exec, NULL, NULL, fd);
 	return (long)exec;
 }
+/*读取指定目录下的目录项*/
+long callback_sys_getdents64(struct pt_regs *regs)
+{
+	int fd = (int)regs->a0;
+	void * dirent = (void*)regs->a1;
+	unsigned long count = (regs->a2);
+
+	struct file * filp = NULL;
+	unsigned long ret = 0;
+	if(fd < 0 || fd > TASK_FILE_MAX)
+	{
+		return -1;
+	}
+	if(count < 0)
+	{
+		return -1;
+	}
+	filp = get_current_task()->file_struct[fd];
+	if(filp->f_ops && filp->f_ops->readdir)
+	{
+		ret = filp->f_ops->readdir(filp, dirent, &fill_dentry);
+	}
+	return ret;
+}
 
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
 
@@ -430,4 +455,5 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_write, sys_write)
 	__SYSCALL(SYS_execve, sys_execve)
 	__SYSCALL(SYS_lseek, sys_lseek)
+	__SYSCALL(SYS_getdents64, sys_getdents64)
 };

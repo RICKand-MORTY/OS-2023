@@ -16,6 +16,7 @@
 #include <fat32.h>
 #include <sysflags.h>
 #include <elf_loader.h>
+#include "../usr/shell.h"
 
 extern char _bss_begin[], _bss_end[];
 extern char _text[], _etext[];
@@ -79,12 +80,13 @@ int user_main()
 	print("[SH]#:");
 	while(1)
 	{
+		
 		if(keyboard.flag != 1)
 		{
 			continue;
 		}
-		
-
+		parse_command();
+		print("[SH]#:");
 	}
 
 	/*print("clone done, 0x%lx 0x%lx\n", &user_thread_1, child_stack + PAGE_SIZE);

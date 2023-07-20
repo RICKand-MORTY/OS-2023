@@ -35,3 +35,8 @@ unsigned long register_filesystem(struct file_system_type * fs)
 
 	return 1;
 }
+
+int fill_dentry(void *buf,char *name, long namelen,long type,long offset)
+{
+    
+}

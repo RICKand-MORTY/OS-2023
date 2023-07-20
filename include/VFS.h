@@ -82,6 +82,8 @@ struct dir_entry_operations
 	long (*iput)(struct dir_entry * dentry,struct index_node * inode);
 };
 
+typedef int (*filldir_t)(void *buf,char *name, long namelen,long type,long offset);
+
 struct file_operations
 {
 	long (*open)(struct index_node * inode,struct file * filp);
@@ -90,6 +92,7 @@ struct file_operations
 	long (*write)(struct file * filp,char * buf,unsigned long count,long * position);
 	long (*lseek)(struct file * filp,long offset,long origin);
 	long (*ioctl)(struct index_node * inode,struct file * filp,unsigned long cmd,unsigned long arg);
+	long (*readdir)(struct file * filp,void * dirent,filldir_t filler);
 };
 
 struct file_system_type
@@ -127,4 +130,5 @@ struct Disk_Partition_Table
 
 struct super_block* mount_fs(char * name,struct Disk_Partition_Table_Entry * DPTE,void * buf);
 unsigned long register_filesystem(struct file_system_type * fs);
+int fill_dentry(void *buf,char *name, long namelen,long type,long offset);
 #endif

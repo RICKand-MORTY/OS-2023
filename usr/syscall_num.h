@@ -4,8 +4,8 @@
 
 #define SYS_STDOUT          0
 #define SYS_nanosleep       101
-#define SYS_MALLOC          2
-#define SYS_free            3
+#define SYS_MALLOC          5
+#define SYS_free            6
 #define SYS_sched_yield     124
 #define SYS_clone           220
 #define SYS_open            55
@@ -15,4 +15,5 @@
 #define SYS_write           64
 #define SYS_lseek           65
 #define SYS_execve          221
+#define SYS_getdents64      61
 #endif
