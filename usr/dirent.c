@@ -3,6 +3,8 @@
 #include <sysflags.h>
 
 #define NULL ((void*)0)
+
+/*打开目录*/
 struct DIR* opendir(const char *path)
 {
 	int fd = 0;
@@ -22,6 +24,7 @@ struct DIR* opendir(const char *path)
 	return dir;
 }
 
+/*关闭目录*/
 int closedir(struct DIR *dir)
 {
 	close(dir->fd);
@@ -29,6 +32,7 @@ int closedir(struct DIR *dir)
 	return 0;
 }
 
+/*从目录中读取数据，返回dirent指针*/
 struct dirent *readdir(struct DIR *dir)
 {
 	int len = 0;

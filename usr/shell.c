@@ -1,7 +1,10 @@
 #include <plic.h>
 #include "shell.h"
+#include "dirent.h"
 #include "user_syscall.h"
 #include "../lib/lib.h"
+#include <sysflags.h>
+#include <memory.h>
 
 #define NULL ((void *)0)
 #define MAXARGSIZE  32
@@ -9,17 +12,87 @@
 char argv[MAXARGNUM][MAXARGSIZE];
 int argc = 0;
 
-char *current_dir = NULL;
+char *current_dir = "/";
 
 int cd_command(){}
-int ls_command(){}
+
+int ls_command()
+{
+    struct DIR* dir = NULL;
+    struct dirent * buf = NULL;
+    int i = 0;
+    dir = opendir(current_dir);
+    unsigned int name_pos = 0;
+    unsigned int name_num = 0; 
+    char *str = malloc(1);
+    //print("ls_command opendir:%d\n",dir->fd);
+    while(1)
+    {
+        buf = readdir(dir);
+        if(buf == NULL)
+        {
+            break;
+        }
+        memcpy(str + name_pos,buf->d_name, buf->d_namelen);
+        name_num++;
+        name_pos+=32;
+    }
+    name_pos = 0;
+    print("content:\n");
+    for(; i < name_num; i++, name_pos+=32)
+    {
+        print("%s\n",(str + name_pos));
+    }
+    print("\n\n");
+    free(str, 1);
+    closedir(dir);
+}
+
 int pwd_command()
 {
 	if(current_dir)
 		print("%s\n",current_dir);
 	return 0;
 }
-int cat_command(){}
+
+int cat_command()
+{
+    int len = 0;
+    char * filename = NULL;
+    int fd = 0;
+    char * buf = NULL;
+    int filepath_len = 0;
+    unsigned int needpage = 0;
+    int file_len = 0;
+    
+    len = strlen(current_dir);
+    filepath_len = len + strlen(argv[1]);
+    filename = malloc(1);
+    memset(filename, 0, filepath_len + 2);      //2 is user for / and \0
+    strcpy(filename, current_dir);
+    if(len > 1)
+    {
+        filename[len] = '/';
+    }
+    strcat(filename, argv[1]);
+    print("filename:%s\n",filename);
+    fd = open(filename, 0);
+    if(fd == -1)
+    {
+        print("error:not that file!\n");
+        return -1;
+    }
+    file_len = lseek(fd, 0, SEEK_END);
+    needpage = ((file_len + 1 + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE; 
+    buf = malloc(needpage);
+    memset(buf, 0, needpage * PAGE_SIZE);
+    lseek(fd, 0, SEEK_SET);
+    len = read(fd, buf, file_len);
+    print("\ncontent:\n%s\n",buf);
+    close(fd);
+    return 0;
+}
+
 int touch_command(){}
 int rm_command(){}
 int mkdir_command(){}
@@ -50,7 +123,7 @@ struct	buildincmd shell_internal_cmd[] =
 static int run_command(int index)
 {
 	int res = 0;
-    print("run_command %s\n",shell_internal_cmd[index].name);
+    //print("run_command %s\n",shell_internal_cmd[index].name);
 	res = shell_internal_cmd[index].function();
     if(res)
     {
@@ -68,7 +141,8 @@ static int find_cmd()
 	for(i = 0;i<sizeof(shell_internal_cmd)/sizeof(struct buildincmd);i++)
 		if(!strcmp(argv[0],shell_internal_cmd[i].name))
 			return i;
-	return -1;
+	print("command not find!\n");
+    return -1;
 }
 
 /*解析指令和参数,失败返回-1，成功返回0*/
@@ -91,6 +165,7 @@ int parse_command(void)
             argv[argv_count][k] = '\0';
             k = 0;
             argv_count++;
+            i++;
         }
         else
         {
@@ -99,22 +174,24 @@ int parse_command(void)
         }
     }
     argc = argv_count;
-    print("command argc = %d\n", argc);
+    //print("command argc = %d\n", argc);
     if(!argc)
     {
         return -1;
     }
     memset(&keyboard, 0, sizeof(keyboard));
-    for(i = 0 ; i < argc; i++)
+    /*for(i = 0 ; i < argc; i++)
     {
         print("argv[%d]:%s'\t",i,argv[i]);
     }
-    print("\n");
+    print("\n");*/
     i = find_cmd();
     if(i == -1)
     {
         return -1;
     }
     run_command(i);
+    argc = 0;
+    memset(argv, 0, MAXARGNUM * MAXARGSIZE);
     return 0;
 }

@@ -93,3 +93,20 @@ char *strcpy(char *dest, const char *src)
     *q = '\0';
     return dest;
 }
+
+char * strcat(char * Dest,char * Src)
+{
+	char * p = Dest; 
+	while(*p != '\0') 
+	{
+		p++; 
+	}
+	while(*Src != '\0') 
+	{
+		*p = *Src;
+		p++;
+		Src++;
+	}
+	*p = '\0';
+	return Dest;
+}

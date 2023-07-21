@@ -404,6 +404,7 @@ long FAT32_readdir(struct file * filp,void * dirent,filldir_t filler)
 	unsigned long sector = 0;
 	unsigned char * buf =NULL; 
 	unsigned int buflen = 0;
+	unsigned int needpage = 0;
 	char *name = NULL;
 	int namelen = 0;
 	int i = 0,j = 0,x = 0,y = 0;
@@ -420,7 +421,7 @@ long FAT32_readdir(struct file * filp,void * dirent,filldir_t filler)
 		if(cluster > 0x0ffffff7)
 		{
 			printk("FAT32 FS(readdir) cluster didn`t exist\n");
-			return NULL;
+			return -1;
 		}
 	}
 
@@ -430,9 +431,9 @@ next_cluster:
 	if(buf == NULL)
 	{
 		printk("FAT32 FS(readdir) read disk ERROR!!!!!!!!!!\n");
-		return NULL;
+		return -1;
 	}
-
+	needpage = ((buflen + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE; 
 	tmpdentry = (struct FAT32_Directory *)(buf + filp->position%fsbi->bytes_per_cluster);
 
 	for(i = filp->position%fsbi->bytes_per_cluster;i < fsbi->bytes_per_cluster;i += 32,tmpdentry++,filp->position += 32)
@@ -515,8 +516,8 @@ next_cluster:
 	if(cluster < 0x0ffffff7)
 		goto next_cluster;
 
-	more_page_free(buf, 1);
-	return NULL;
+	more_page_free(buf, needpage);
+	return -1;
 
 find_lookup_success:
 

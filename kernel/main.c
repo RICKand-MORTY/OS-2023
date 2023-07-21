@@ -77,7 +77,7 @@ int user_main()
 		print("%s: error while clone\n", __func__);
 		return ret;
 	}*/
-	print("[SH]#:");
+	print("\n[SH]#:");
 	while(1)
 	{
 		

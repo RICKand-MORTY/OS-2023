@@ -41,7 +41,7 @@ unsigned long page_alloc()
     {
         return 1;
     }
-    printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
+    //printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
     while (pages_bitmaps[index] == 0xffffffffffffffff)
     {
         index++;
@@ -53,7 +53,7 @@ unsigned long page_alloc()
     }
     pages_bitmaps[index] |= i; 
     global_free_pages--;
-    printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
+    //printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
     return (phy_start_address + index * sizeof(u64) * 8 + offset * PAGE_SIZE);
 }
 
@@ -73,7 +73,7 @@ unsigned long more_page_alloc(int count)
     {
         return 1; 
     }
-    printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
+    //printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
     while (pages_bitmaps[index] == 0xffffffffffffffff) 
     {
         index++;
@@ -130,7 +130,7 @@ unsigned long more_page_alloc(int count)
             }
         }
         global_free_pages -= count; 
-        printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
+        //printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
         return (phy_start_address + begin * PAGE_SIZE); 
     }
     else 
@@ -252,7 +252,7 @@ int page_free(unsigned int count)
             index--;
         }
     }
-    printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
+    //printk("pages_bitmaps[index]:%016lx,index=%d\n",pages_bitmaps[index],index);
     return 0;
 }
 
@@ -267,6 +267,6 @@ int page_free_addr(unsigned long addr)
     int offset = page_index % (sizeof(u64) * 8);
     int i = 1 << (offset);
     pages_bitmaps[bitmap_index] &= ~i;
-    printk("pages_bitmaps[index]:%016lx,index=%d,offset=%d\n",pages_bitmaps[bitmap_index],bitmap_index, offset);
-    printk("phsy addr = %016lx",phy_start_address);
+    //printk("pages_bitmaps[index]:%016lx,index=%d,offset=%d\n",pages_bitmaps[bitmap_index],bitmap_index, offset);
+    //printk("phsy addr = %016lx",phy_start_address);
 }

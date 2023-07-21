@@ -46,7 +46,7 @@ void handle_plic_irq(struct pt_regs *regs)
         }
         else if(irq_num == VIRTIO0_IRQ)
         {
-			printk("virtio device interrupt!\n");
+			//printk("virtio device interrupt!\n");
 			virtio_disk_intr();
         }
         else

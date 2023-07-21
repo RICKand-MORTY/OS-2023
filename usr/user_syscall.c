@@ -97,3 +97,8 @@ long exec(char *path, char *argv, char *envp)
 	return 0;
 	 
 }
+
+int getdents(int fd,struct dirent *buf,long count)
+{
+	return SYSCALL_3(SYS_getdents64, fd, (void *)buf, count);
+}

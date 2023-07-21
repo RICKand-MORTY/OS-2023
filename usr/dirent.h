@@ -2,10 +2,9 @@
 #define _DIRENT_H
 
 
-/*暂未按照标准*/
 struct dirent
 {
-	long d_offset;
+	long d_offset;		
 	long d_type;
 	long d_namelen;
 	char d_name[];
@@ -19,5 +18,8 @@ struct DIR
 	char buf[256];
 };
 
+struct DIR* opendir(const char *path);
+int closedir(struct DIR *dir);
+struct dirent *readdir(struct DIR *dir);
 
 #endif
