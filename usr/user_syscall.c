@@ -89,6 +89,10 @@ long exec(char *path, char *argv, char *envp)
 {
 	ELFExec_t *exec = NULL;
 	exec = SYSCALL_3(SYS_execve, path, argv, envp);
+	if(exec == -1)
+	{
+		return -1;
+	}
 	if(jumpTo(exec))
 	{
 		return -1;

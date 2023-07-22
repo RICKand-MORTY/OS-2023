@@ -113,7 +113,7 @@ typedef struct  {
   int secIdx;                   //section index
   unsigned long relSecIdx;      //index in relocation
   unsigned long sec_size;       //size of section(data len)
-} __attribute__((packed)) ELFSection_t;
+}__attribute__((aligned(4))) ELFSection_t;
 
 /* ELF-64 Symbol Table Entry */
 typedef struct
@@ -159,7 +159,7 @@ typedef struct ELFExec {
 
   unsigned int fini_array_size;
 
-} __attribute__((packed)) ELFExec_t;
+}__attribute__((aligned(16))) ELFExec_t;
 
 //use for searching each section
 typedef enum {

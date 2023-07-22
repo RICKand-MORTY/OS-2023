@@ -143,7 +143,7 @@ static int placeInfo(ELFExec_t *e, Elf64_Shdr *sh, const char *name, int n, stru
     if (loadSecData(e, &e->text, sh, filp) == -1)
       return FoundERROR;
     e->text.secIdx = n;
-    e->entry = (char *)e->entry - sh->sh_addr;
+    //e->entry = (char *)e->entry - sh->sh_addr;
     e->text.sec_size = sh->sh_size;
     return FoundText;
   } else if (!strcmp(name, ".rodata")) {
@@ -375,7 +375,7 @@ int jumpTo(ELFExec_t *e)
 {
   void * stack = NULL;
   if (e->entry != 1) {
-    entry_t * entry = (entry_t*) (e->text.data + e->entry);
+    entry_t * entry = (entry_t*) (e->text.data);
     char * addr = (char *)(e->text.data + e->entry);
     print("elf running now!\n\n");
     /*for(int i=0;i<e->text.sec_size;i++)
@@ -470,16 +470,17 @@ int load_elf(char *path, loader_env_t user_data, ELFExec_t *exec, char* argv, ch
     return -1;
   }
   filp = get_current_task()->file_struct[fd];
-  if (!IS_FLAGS_SET(loadSymbols(exec, filp), FoundValid)) 
+  /*if (!IS_FLAGS_SET(loadSymbols(exec, filp), FoundValid)) 
   {
     //至少要有符号表和字符串表
     more_page_free(exec, needpage);
     return -2;
-  }
+  }*/
   /*if (relocateSections(exec) != 0) {
     more_page_free(exec, needpage);
     return -3;
   }*/
+  loadSymbols(exec, filp);
   do_init(exec, filp);
   //jumpTo(exec);
   //unload_elf(exec, needpage, filp);

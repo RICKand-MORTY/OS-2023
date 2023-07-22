@@ -97,7 +97,31 @@ int touch_command(){}
 int rm_command(){}
 int mkdir_command(){}
 int rmdir_command(){}
-int exec_command(){}
+int exec_command()
+{
+    char * path = argv[1];
+
+    int len = strlen(current_dir);
+    int filepath_len = len + strlen(argv[1]);
+    char * filename = (char*)malloc(1);
+    memset(filename, 0, filepath_len + 2);      //2 is user for / and \0
+    strcpy(filename, current_dir);
+    if(len > 1)
+    {
+        filename[len] = '/';
+    }
+    strcat(filename, argv[1]);
+    print("filename:%s\n",filename);
+
+    if(exec(filename, NULL, NULL))
+    {
+        free(filename, 1);
+        return -1;
+    }
+    free(filename, 1);
+    return 0;
+
+}
 int shutdown_command()
 {
     
