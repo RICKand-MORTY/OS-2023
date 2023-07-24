@@ -37,6 +37,16 @@ unsigned long print(const char *fmt,...)
 	return SYSCALL_1(SYS_STDOUT, (char *)buf);
 }
 
+unsigned long printf(const char *fmt,...)
+{
+	int num=0;
+    va_list args;
+    va_start(args,fmt);
+    num=vsprintf(buf,fmt,args);
+    va_end(args);
+	return SYSCALL_1(SYS_STDOUT, (char *)buf);
+}
+
 _u64 clone(int (*thread_callback)(void *arg), void *child_stack, int flag, void *arg)
 {
 	return __clone(thread_callback, child_stack, flag, arg);

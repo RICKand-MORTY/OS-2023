@@ -11,6 +11,7 @@
 #include <buf.h>
 #include <elf.h>
 #include <elf_loader.h>
+#include "../../usr/shell.h"
 
 void syscall_handler(struct pt_regs *regs)
 {
@@ -126,7 +127,8 @@ int fopen(char *pathname, int flags)
 		filp->position = filp->dentry->dir_inode->file_size;
 	}
 	f = get_current_task()->file_struct;
-	for(i = 0;i < TASK_FILE_MAX;i++)
+	//1 is STDIN 2 is STDOUT 3 is STDERR
+	for(i = 3;i < TASK_FILE_MAX;i++)
 		if(f[i] == NULL)
 		{
 			fd = i;
@@ -216,6 +218,11 @@ long callback_sys_write(struct pt_regs *regs)
 	if(count < 0)
 		return -EINVAL;
 
+	if(fd == STDOUT)
+	{
+		printk("%s",buf);
+		return 0;
+	}
 	filp = get_current_task()->file_struct[fd];
 	if(filp->f_ops && filp->f_ops->write)
 		ret = filp->f_ops->write(filp,buf,count,&filp->position);
@@ -439,6 +446,18 @@ long callback_sys_getdents64(struct pt_regs *regs)
 	return ret;
 }
 
+long callback_sys_getcwd(struct pt_regs *regs)
+{
+	char *buf = regs->a0;
+	unsigned int size = regs->a1;
+	if(size < strlen(current_dir))
+	{
+		return NULL;
+	} 
+	strcpy(buf, current_dir);
+	return current_dir;
+}
+
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
 
 const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
@@ -456,4 +475,5 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_execve, sys_execve)
 	__SYSCALL(SYS_lseek, sys_lseek)
 	__SYSCALL(SYS_getdents64, sys_getdents64)
+	__SYSCALL(SYS_getcwd, sys_getcwd)
 };

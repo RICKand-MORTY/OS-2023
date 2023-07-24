@@ -26,4 +26,8 @@
 
 #define SEEK_MAX	3
 
+#define STDIN       0
+#define STDOUT      1
+#define STDERR      2   
+
 #endif

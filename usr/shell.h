@@ -8,6 +8,7 @@ struct	buildincmd
 	int (*function)();
 };
 
+extern char *current_dir;
 
 int parse_command(void);
 

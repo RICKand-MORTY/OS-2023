@@ -74,7 +74,19 @@ int handle_uart_irq()
         keyboard.flag = 1;
         return c;
     }
-    else
+    else if(c == 127)
+    {
+        if(keyboard.len > 0)
+        {
+            keyboard.len--;
+            keyboard.buf[keyboard.len] = '\0';
+            uart_send('\b');
+            uart_send(' ');
+            uart_send('\b');
+        }
+        return 0;
+    }
+    else if (c >= 32 && c <= 126)
     {
         keyboard.buf[keyboard.len] = c;
         keyboard.len++;

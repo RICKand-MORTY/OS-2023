@@ -143,7 +143,7 @@ static int placeInfo(ELFExec_t *e, Elf64_Shdr *sh, const char *name, int n, stru
     if (loadSecData(e, &e->text, sh, filp) == -1)
       return FoundERROR;
     e->text.secIdx = n;
-    //e->entry = (char *)e->entry - sh->sh_addr;
+    e->entry = (char *)e->entry - sh->sh_addr;
     e->text.sec_size = sh->sh_size;
     return FoundText;
   } else if (!strcmp(name, ".rodata")) {
@@ -375,7 +375,7 @@ int jumpTo(ELFExec_t *e)
 {
   void * stack = NULL;
   if (e->entry != 1) {
-    entry_t * entry = (entry_t*) (e->text.data);
+    entry_t *entry = (entry_t*) (e->text.data + e->entry);
     char * addr = (char *)(e->text.data + e->entry);
     print("elf running now!\n\n");
     /*for(int i=0;i<e->text.sec_size;i++)
@@ -388,27 +388,31 @@ int jumpTo(ELFExec_t *e)
       print("%02x ",*addr);
       addr++;
     }*/
-    entry();
-    /*stack = malloc(2); //use for stack
-    memset(stack, 0, PAGE_SIZE * 2);
-    if(stack != 1)
+    //entry();
+    stack = malloc(2); //use for stack
+    memset(stack, 0, PAGE_SIZE * 2); // clear both pages
+    if(stack != (void *)1) // check if allocation succeeded
     {
       register unsigned long saved = 0;
       register unsigned long ra = 0;
-      void * tos = stack + PAGE_SIZE * 2;
-      tos = (void *)((unsigned long)tos & ~0xf); // align tos to 16 bytes
-      __asm__ volatile("mv %0, sp\n\t" : "=r" (saved)); // save sp to saved
-      __asm__ volatile("mv %0, ra\n\t" : "=r" (ra)); // save ra to ra
-      __asm__ volatile("mv sp, %0\n\t" : : "r" (tos)); // set sp to tos
-      __asm__ volatile("addi sp, sp, -16\n\t" // allocate stack space
-              "sd %0, 8(sp)\n\t" // store saved to stack
-              "sd %1, 0(sp)\n\t" : : "r" (saved), "r" (ra)); // store ra to stack
-      entry();
-      __asm__ volatile("ld %0, 8(sp)\n\t" // load saved from stack
-              "ld %1, 0(sp)\n\t" // load ra from stack
-              "addi sp, sp, 16\n\t" : "=r" (saved), "=r" (ra)); // deallocate stack space
-      __asm__ volatile("mv sp, %0\n\t" : : "r" (saved)); // restore sp from saved
-      __asm__ volatile("mv ra, %0\n\t" : : "r" (ra)); // restore ra from ra
+      void * tos = (void *)(((unsigned long)stack + PAGE_SIZE * 2) & (long)(-16));
+      //tos = (void *)((unsigned long)tos & -16); // align tos to 16 bytes
+      /* s->saved */
+		__asm__ volatile("MV %0, sp\n\t" : : "r"(saved));
+		/* tos->MSP */
+		__asm__ volatile("MV sp, %0\n\t" : : "r"(tos));
+		/* push saved */
+		__asm__ volatile("ADDI sp, sp, -8\n\t"
+				 "SD %0, 0(sp)\n\t" : : "r"(saved));
+
+    entry();
+
+		/* pop saved */
+		__asm__ volatile("LD %0, 0(sp)\n\t"
+				 "ADDI sp, sp, 8\n\t" : : "r"(saved));
+		/* saved->sp */
+		__asm__ volatile("MV sp, %0\n\t" : : "r"(saved));
+
       free(stack, 2);
       print("elf exec finish!\n");
       return 0;
@@ -417,7 +421,7 @@ int jumpTo(ELFExec_t *e)
     else
     {
       return -1; // allocation failed
-    }*/
+    }
   } 
   else
   {
@@ -425,6 +429,7 @@ int jumpTo(ELFExec_t *e)
     return -1;
   }
 }
+
 
 
 int load_elf(char *path, loader_env_t user_data, ELFExec_t *exec, char* argv, char* envp, int fd)

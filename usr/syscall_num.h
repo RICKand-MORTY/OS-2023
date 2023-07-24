@@ -16,4 +16,5 @@
 #define SYS_lseek           65
 #define SYS_execve          221
 #define SYS_getdents64      61
+#define SYS_getcwd          17
 #endif

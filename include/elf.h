@@ -113,7 +113,7 @@ typedef struct  {
   int secIdx;                   //section index
   unsigned long relSecIdx;      //index in relocation
   unsigned long sec_size;       //size of section(data len)
-}__attribute__((aligned(4))) ELFSection_t;
+}__attribute__((aligned(16))) ELFSection_t;
 
 /* ELF-64 Symbol Table Entry */
 typedef struct
@@ -156,6 +156,7 @@ typedef struct ELFExec {
   ELFSection_t sdram_rodata;
   ELFSection_t sdram_data;
   ELFSection_t sdram_bss;
+  ELFSection_t got;
 
   unsigned int fini_array_size;
 

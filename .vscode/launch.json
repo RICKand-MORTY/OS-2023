@@ -34,6 +34,9 @@
                      "text": "symbol-file ${workspaceFolder}/kernel-qemu.elf",
                      "description": "load symbol-file"
                 },
+                {
+                    "text": "set tdesc filename myxml.xml"
+                },
             ],
         }
     ]

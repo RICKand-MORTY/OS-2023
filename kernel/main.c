@@ -77,16 +77,16 @@ int user_main()
 		print("%s: error while clone\n", __func__);
 		return ret;
 	}*/
-	print("\n[SH]#:");
 	while(1)
 	{
-		
-		if(keyboard.flag != 1)
+		print("\n[SH]%s#:", current_dir);
+		while(!keyboard.flag);
+		if(!keyboard.len)
 		{
+			keyboard.flag = 0;
 			continue;
 		}
 		parse_command();
-		print("[SH]#:");
 	}
 
 	/*print("clone done, 0x%lx 0x%lx\n", &user_thread_1, child_stack + PAGE_SIZE);
