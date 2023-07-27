@@ -10,10 +10,10 @@ int strlen(const char* s)
     return count;
 }
 
-void memset(void* addr, int val, unsigned int size)
+void memset(void* addr, int val, unsigned long size)
 {
     char *a = addr;
-    int i=0;
+    unsigned long i=0;
     for(i = 0;i < size;i++)
     {
         *a = val;

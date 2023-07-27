@@ -185,7 +185,7 @@ long FAT32_read(struct file * filp,char * buf,unsigned long count,long * positio
 	int index = *position / fsbi->bytes_per_cluster;	//位置所在簇
 	long offset = *position % fsbi->bytes_per_cluster;	//位置所在簇内偏移
 	unsigned char * buffer = NULL;
-
+	char * buf_old = buf;
 	if(!cluster)
 		return -EFAULT;
 	/*for(i = 0;i < index;i++)	//取得对应簇号
@@ -214,7 +214,7 @@ long FAT32_read(struct file * filp,char * buf,unsigned long count,long * positio
 	else
 		index = count;
 
-	printk("FAT32_read first_cluster:%d,size:%d,preempt_count:%d\n",finode->first_cluster,filp->dentry->dir_inode->file_size,get_current_task()->count);
+	//printk("FAT32_read first_cluster:%d,size:%d,preempt_count:%d\n",finode->first_cluster,filp->dentry->dir_inode->file_size,get_current_task()->count);
 
 	do
 	{
@@ -238,7 +238,7 @@ long FAT32_read(struct file * filp,char * buf,unsigned long count,long * positio
 		//index不为0说明跨越了簇号
 	}while(index && (cluster = read_FAT_Entry(fsbi,cluster)));
 
-	
+	buf = buf_old;
 	if(!index)
 		retval = count;
 	return retval;
@@ -387,7 +387,7 @@ long FAT32_lseek(struct file * filp,long offset,long origin)
 		return -EOVERFLOW;
 	}
 	filp->position = pos;
-	printk("FAT32 lseek alert position:%d\n", filp->position);
+	//printk("FAT32 lseek alert position:%d\n", filp->position);
 	return pos;
 }
 

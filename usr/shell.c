@@ -50,9 +50,13 @@ int ls_command()
 
 int pwd_command()
 {
-	if(current_dir)
+	/*if(current_dir)
 		print("%s\n",current_dir);
-	return 0;
+	return 0;*/
+    char * buf[30];
+    void * str = getcwd(buf, 30);
+    print("aaa %s\n",str);
+    return 0;
 }
 
 int cat_command()

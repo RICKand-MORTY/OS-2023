@@ -68,7 +68,7 @@ int fopen(char *pathname, int flags)
 	int fd = -1;
 	int i;
 
-	printk("sys_open!\n");
+	//printk("sys_open!\n");
 	path = alloc_pgtable();
 	if(path == 1)
 	{
@@ -186,7 +186,7 @@ long callback_sys_read(struct pt_regs *regs)
 	size_t count = (size_t)regs->a2;
 	struct file* filp = NULL;
 	long ret = 0;
-	printk("sys_read:%d\n",fd);
+	//printk("sys_read:%d\n",fd);
 	if(fd < 0 || fd >= TASK_FILE_MAX)
 	{
 		return -1;
@@ -212,7 +212,7 @@ long callback_sys_write(struct pt_regs *regs)
 	struct file * filp = NULL;
 	long ret = 0;
 
-	printk("sys_write:%d\n",fd);
+	//printk("sys_write:%d\n",fd);
 	if(fd < 0 || fd >= TASK_FILE_MAX)
 		return -EBADF;
 	if(count < 0)
@@ -246,7 +246,7 @@ long callback_sys_lseek(struct pt_regs *regs)
 	struct file * filp = get_current_task()->file_struct[fd];
 	long ret = 0;
 
-	printk("sys_lseek:%d\n", fd);
+	//printk("sys_lseek:%d\n", fd);
 	if(fd < 0 || fd >= TASK_FILE_MAX)
 		return -EBADF;
 	if(whereat < 0 || whereat >= SEEK_MAX)
@@ -274,120 +274,6 @@ long callback_sys_malloc(struct pt_regs *regs)
 {
 	int need = regs->a0;
 	return more_page_alloc(need);
-}
-
-long do_exec(char* path, char* argv, char* envp)
-{
-	struct dir_entry* dentry = NULL;
-	struct file * filp = NULL;
-	unsigned long filesize = 0;
-	int error = 0;
-	char *buf = NULL;
-	Elf64_Ehdr *elf_head = NULL;
-	char * exe_page = 0;
-	int i = 0, j = 0;
-	Elf64_Phdr *elf_segment = NULL;
-	Elf64_Shdr *elf_section_head = NULL;
-	unsigned int section_offset = 0;
-	unsigned int read_count = 0;
-	unsigned int need_page = 0;
-	unsigned long buf_size = 0;
-
-	//find the file
-	dentry = path_walk(path, 0);
-	if(dentry == NULL)
-	{
-		error = -ENOENT;
-		goto bad;
-	}
-	if(dentry->dir_inode->attribute == FS_ATTR_DIR)
-	{
-		printk("%s is a diretory!\n", path);
-		error = -EISDIR;
-		goto bad;
-	}
-
-	//ready to read the file from disk to buf
-	filp = alloc_pgtable();
-	if(filp == 1)
-	{
-		error = -ENOMEM;
-		goto bad;
-	}
-	filp->dentry = dentry;
-	filp->f_ops = dentry->dir_inode->f_ops;
-	filesize = dentry->dir_inode->file_size;
-	if(filesize == 0)
-	{
-		printk("%s file size is 0!\n", path);
-		error = -ENOEXEC;
-		goto bad;
-	}
-	read_count = ((filesize + BSIZE - 1) & ~(BSIZE -1)) / BSIZE;				//取整
-	need_page = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
-	buf = (char *)more_page_alloc(need_page);
-	memset(buf, 0, need_page * PAGE_SIZE);
-	if(buf == 1)
-	{
-		error = -ENOMEM;
-		goto bad;
-	}
-	memset((void *)buf, 0, PAGE_SIZE * need_page);
-	if(filp->f_ops && filp->f_ops->read)
-		error = filp->f_ops->read(filp, buf, read_count, &filp->position);
-	if(error != 1)
-	{
-		error = -EFAULT;
-		goto bad;
-	}
-
-	//get elf head
-	elf_head = (Elf64_Ehdr *)buf;
-	if(strcmp(elf_head->e_ident, ELFMAG))
-	{
-		error = -ENOEXEC;
-		goto bad;
-	}
-
-	//get and load elf section to memory
-	exe_page = (char *)more_page_alloc(need_page);
-	memset(exe_page, 0, need_page * PAGE_SIZE);
-	if(exe_page == 1)
-	{
-		error = ENOMEM;
-		goto bad;
-	}
-	memset((void *)exe_page, 0, PAGE_SIZE * need_page);
-	elf_section_head = (Elf64_Shdr *)((char *)elf_head + elf_head->e_shoff);
-	for(i = 0; i < elf_head->e_shnum; i++)
-	{
-		elf_section_head = (Elf64_Shdr *)((char *)elf_head + elf_head->e_shoff + section_offset);
-		if(elf_section_head->sh_type != ET_REL)
-		{
-			error = -ENOEXEC;
-			goto bad;
-		}
-		if(elf_section_head->sh_addr % PAGE_SIZE)
-		{
-			
-		}
-	}
-
-
-	bad:
-		if(filp !=0 && filp != 1)
-		{
-			page_free_addr(filp);
-		}
-		if(buf !=0 && buf != 1)
-		{
-			more_page_free(buf, need_page);
-		}
-		if(exe_page != 0 && exe_page != 1)
-		{
-			more_page_free(exe_page, need_page);
-		}
-		return error;
 }
 
 long callback_sys_execve(struct pt_regs *regs)
@@ -458,6 +344,18 @@ long callback_sys_getcwd(struct pt_regs *regs)
 	return current_dir;
 }
 
+long callback_sys_exit(struct pt_regs *regs)
+{
+	int ec = regs->a0;
+	printk("ec: %d\n",ec);
+	return 0;
+}
+
+long callback_sys_times(struct pt_regs *regs)
+{
+
+}
+
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
 
 const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
@@ -476,4 +374,6 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_lseek, sys_lseek)
 	__SYSCALL(SYS_getdents64, sys_getdents64)
 	__SYSCALL(SYS_getcwd, sys_getcwd)
+	__SYSCALL(SYS_exit, sys_exit)
+	__SYSCALL(SYS_times, sys_times)
 };

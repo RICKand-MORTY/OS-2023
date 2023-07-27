@@ -15,6 +15,7 @@
 #define LOADER_MAX_SYM_LENGTH        33
 
 typedef void (entry_t)(void);
+ELFseg elfseg;
 
 /*
 读取段表头存入h中，失败返回-1，成功返回0
@@ -143,40 +144,34 @@ static int placeInfo(ELFExec_t *e, Elf64_Shdr *sh, const char *name, int n, stru
     if (loadSecData(e, &e->text, sh, filp) == -1)
       return FoundERROR;
     e->text.secIdx = n;
-    e->entry = (char *)e->entry - sh->sh_addr;
+    //e->entry = sh->sh_addr + (e->entry - sh->sh_offset);
     e->text.sec_size = sh->sh_size;
+    e->text.shaddr = sh->sh_offset;
+    e->text.align = sh->sh_addralign;
     return FoundText;
   } else if (!strcmp(name, ".rodata")) {
     if (loadSecData(e, &e->rodata, sh, filp) == -1)
       return FoundERROR;
     e->rodata.secIdx = n;
+    e->rodata.sec_size = sh->sh_size;
+    e->rodata.align = sh->sh_addralign;
     return FoundRodata;
   } else if (!strcmp(name, ".data")) {
     if (loadSecData(e, &e->data, sh, filp) == -1)
       return FoundERROR;
     e->data.secIdx = n;
+    e->data.align = sh->sh_addralign;
+    e->data.sec_size = sh->sh_size;
     return FoundData;
   } else if (!strcmp(name, ".bss")) {
     if (loadSecData(e, &e->bss, sh, filp) == -1)
       return FoundERROR;
     e->bss.secIdx = n;
+    e->bss.align = sh->sh_addralign;
+    e->bss.sec_size = sh->sh_size;
     return FoundBss;
-  } else if (!strcmp(name, ".sdram_rodata")) {
-    if (loadSecData(e, &e->sdram_rodata, sh, filp) == -1)
-      return FoundERROR;
-    e->sdram_rodata.secIdx = n;
-    return FoundSDRamRodata;
-  } else if (!strcmp(name, ".sdram_data")) {
-    if (loadSecData(e, &e->sdram_data, sh, filp) == -1)
-      return FoundERROR;
-    e->sdram_data.secIdx = n;
-    return FoundSDRamData;
-  } else if (!strcmp(name, ".sdram_bss")) {
-    if (loadSecData(e, &e->sdram_bss, sh, filp) == -1)
-      return FoundERROR;
-    e->sdram_bss.secIdx = n;
-    return FoundSDRamBss;
-  } else if (!strcmp(name, ".init_array")) {
+  } 
+  else if (!strcmp(name, ".init_array")) {
     if (loadSecData(e, &e->init_array, sh, filp) == -1)
       return FoundERROR;
     e->init_array.secIdx = n;
@@ -196,13 +191,8 @@ static int placeInfo(ELFExec_t *e, Elf64_Shdr *sh, const char *name, int n, stru
   } else if (!strcmp(name, ".rel.data")) {
     e->data.relSecIdx = n;
     return FoundRelData;
-  } else if (!strcmp(name, ".rel.sdram_rodata")) {
-    e->sdram_rodata.relSecIdx = n;
-    return FoundRelSDRamRodata;
-  } else if (!strcmp(name, ".rel.sdram_data")) {
-    e->sdram_data.relSecIdx = n;
-    return FoundRelSDRamData;
-  } else if (!strcmp(name, ".rel.init_array")) {
+  } 
+  else if (!strcmp(name, ".rel.init_array")) {
     e->init_array.relSecIdx = n;
     return FoundRelInitArray;
   } else if (!strcmp(name, ".rel.fini_array")) {
@@ -282,10 +272,14 @@ static int initElf(ELFExec_t *e)
     printk("read error!\n");
     return -EIO;
   }
+  memcpy(&elfseg.elf_header, &h, sizeof(Elf64_Ehdr));
   e->entry = h.e_entry;         //入口点
   e->sections = h.e_shnum;      //段描述符数量
   e->sectionTable = h.e_shoff;  //段表偏移
   e->sectionTableStrings = sh.sh_offset;  //.shstrtab相对于文件的偏移
+  e->e_phentsize = h.e_phentsize;
+  e->e_phnum = h.e_phnum;
+  e->e_phoff = h.e_phoff;
   printk("e->sectionTable:%ld e->sectionTableStrings:%ld\n", e->sectionTable, e->sectionTableStrings);
   return 0;
 }
@@ -305,9 +299,6 @@ static void freeElf(ELFExec_t *e) {
   freeSection(&e->rodata);
   freeSection(&e->data);
   freeSection(&e->bss);
-  freeSection(&e->sdram_rodata);
-  freeSection(&e->sdram_data);
-  freeSection(&e->sdram_bss);
   freeSection(&e->init_array);
   freeSection(&e->fini_array);
 }
@@ -371,31 +362,17 @@ int unload_elf(ELFExec_t *exec, int exec_page_size, struct file * filp)
   return 0;
 }
 //执行elf文件,成功返回0,失败返回-1
-int jumpTo(ELFExec_t *e) 
+int jumpTo(entry_t * entry) 
 {
-  void * stack = NULL;
-  if (e->entry != 1) {
-    entry_t *entry = (entry_t*) (e->text.data + e->entry);
-    char * addr = (char *)(e->text.data + e->entry);
+    void * stack = NULL;
     print("elf running now!\n\n");
-    /*for(int i=0;i<e->text.sec_size;i++)
-    {
-      
-      if(i % 16 == 0)
-      {
-        print("\n");
-      }
-      print("%02x ",*addr);
-      addr++;
-    }*/
-    //entry();
     stack = malloc(2); //use for stack
     memset(stack, 0, PAGE_SIZE * 2); // clear both pages
     if(stack != (void *)1) // check if allocation succeeded
     {
       register unsigned long saved = 0;
       register unsigned long ra = 0;
-      void * tos = (void *)(((unsigned long)stack + PAGE_SIZE * 2) & (long)(-16));
+      void * tos = (void *)((unsigned long)stack + PAGE_SIZE * 2);
       //tos = (void *)((unsigned long)tos & -16); // align tos to 16 bytes
       /* s->saved */
 		__asm__ volatile("MV %0, sp\n\t" : : "r"(saved));
@@ -422,25 +399,64 @@ int jumpTo(ELFExec_t *e)
     {
       return -1; // allocation failed
     }
-  } 
-  else
-  {
-    print("No entry defined.\n");
-    return -1;
-  }
 }
 
-
+unsigned long load_segment(ELFExec_t *e, struct file *filp)
+{
+  int i = 0;
+  Elf64_Phdr ph;
+  void * pos = 0;
+  unsigned long entry_addr = 0;
+  elfseg.segment[0] = more_page_alloc(elfseg.needpage);
+  pos = elfseg.segment[0];
+  for(; i < e->e_phnum; i++)
+  {
+    LOADER_SEEK_SET(filp, e->e_phoff + i * e->e_phentsize);
+    if(filp->f_ops->read(filp, (char *)&ph, sizeof(ph), &filp->position) < 0)
+    {
+      printk("read error!\n");
+      return -EIO;
+    }
+    pos = (void *)(((unsigned long)pos + ph.p_align - 1) & ~(ph.p_align -1));
+    elfseg.segment[i] = pos;
+    memcpy(&elfseg.elf_ph[i], &ph, sizeof(ph));
+    if(ph.p_type == PT_LOAD)
+    {
+      LOADER_SEEK_SET(filp, ph.p_offset);
+      if(filp->f_ops->read(filp, elfseg.segment[i], ph.p_filesz, &filp->position) < 0)
+      {
+        printk("read error!\n");
+        return -EIO;
+      }
+      pos += ph.p_filesz;
+      if(ph.p_filesz < ph.p_memsz)
+      {
+        memset(pos, 0, ph.p_memsz - ph.p_filesz);
+        pos += ph.p_memsz - ph.p_filesz;
+      }
+      // check if the segment contains the entry point
+      if(e->entry >= ph.p_vaddr && e->entry <= ph.p_vaddr + ph.p_memsz)
+      {
+        // calculate the entry point address in memory
+        entry_addr = (unsigned long)elfseg.segment[i] + (e->entry - ph.p_vaddr);
+      }
+    }
+  }
+  return entry_addr;
+}
 
 int load_elf(char *path, loader_env_t user_data, ELFExec_t *exec, char* argv, char* envp, int fd)
 {
   struct file * filp = NULL;
   int i = 0;
+  unsigned long enoff = 0;
   int filesize = exec->file_size;
   int needpage = ((filesize + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
   needpage = 1;     //debug
   user_data.fd = fd;
   exec->user_data = user_data;
+  memset(&elfseg, 0, sizeof(elfseg));
+  elfseg.needpage = ((exec->file_size + PAGE_SIZE - 1) & ~(PAGE_SIZE -1)) / PAGE_SIZE;
   if(argv)
   {
     for(i = 0; argv[i] != NULL;i++)
@@ -486,9 +502,13 @@ int load_elf(char *path, loader_env_t user_data, ELFExec_t *exec, char* argv, ch
     return -3;
   }*/
   loadSymbols(exec, filp);
-  do_init(exec, filp);
-  //jumpTo(exec);
-  //unload_elf(exec, needpage, filp);
-  //more_page_free(exec, needpage);
+  enoff = load_segment(exec, filp);
+  if(enoff == 0)
+  {
+    printf("entry is bad!\n");
+    return -1;
+  }
+  elfseg.entry = enoff;
+  //do_init(exec, filp);
   return 0;
 }

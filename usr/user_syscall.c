@@ -1,12 +1,14 @@
 #include "user_syscall.h"
 #include <syscall.h>
 #include "../lib/printk.h"
+#include "../lib/lib.h"
 #include "syscall_num.h"
 #include <process.h>
 #include <elf_loader.h>
+#include <sysflags.h>
 
 //char buf[4096]={0};
-
+typedef void (entry_t)(void);
 
 _u64 internal_syscall(long n, _u64 _a0, _u64 _a1, _u64 _a2, _u64
 		_a3, _u64 _a4, _u64 _a5) {
@@ -98,21 +100,29 @@ long lseek(int fd, long offset, int whereat)
 long exec(char *path, char *argv, char *envp)
 {
 	ELFExec_t *exec = NULL;
+	unsigned long filesize = 0;
+	void * stack = NULL;
+	unsigned long point = 0;
+	unsigned long pos = 0;
 	exec = SYSCALL_3(SYS_execve, path, argv, envp);
 	if(exec == -1)
 	{
 		return -1;
 	}
-	if(jumpTo(exec))
-	{
-		return -1;
-	}
+
+	entry_t *entry = (entry_t *)(elfseg.entry);
+	jumpTo(entry);
 	print("exec finish!\n");
+	free(elfseg.segment[0], elfseg.needpage);
 	return 0;
-	 
 }
 
 int getdents(int fd,struct dirent *buf,long count)
 {
 	return SYSCALL_3(SYS_getdents64, fd, (void *)buf, count);
+}
+
+char * getcwd(char *buf, unsigned int size)
+{
+	return SYSCALL_2(SYS_getcwd, buf, size);
 }

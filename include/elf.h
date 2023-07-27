@@ -32,6 +32,17 @@
 #define SHT_LOUSER          0x80000000
 #define SHT_HIUSER          0xffffffff
 
+/*ph_type*/
+#define PT_NULL             0
+#define PT_LOAD             1
+#define PT_DYNAMIC          2
+#define PT_INTERP           3       
+#define PT_NOTE             4
+#define PT_SHLIB            5
+#define PT_PHDR             6
+#define PT_LOPROC           0x70000000
+#define PT_HIPROC           0x7fffffff
+
 /* 64-bit ELF base types. */
 typedef unsigned long long Elf64_Addr;
 typedef unsigned short Elf64_Half;
@@ -113,7 +124,9 @@ typedef struct  {
   int secIdx;                   //section index
   unsigned long relSecIdx;      //index in relocation
   unsigned long sec_size;       //size of section(data len)
-}__attribute__((aligned(16))) ELFSection_t;
+  unsigned long shaddr;
+  unsigned int align;
+} ELFSection_t;
 
 /* ELF-64 Symbol Table Entry */
 typedef struct
@@ -140,6 +153,10 @@ typedef struct ELFExec {
   unsigned long sections;
   unsigned long sectionTable;
   unsigned long sectionTableStrings;
+  unsigned long e_phnum;
+  unsigned long e_phoff;
+  unsigned long e_phentsize;
+  unsigned long entryoff;
 
   unsigned long symbolCount;
   unsigned long symbolTable;
@@ -153,14 +170,22 @@ typedef struct ELFExec {
   ELFSection_t bss;
   ELFSection_t init_array;
   ELFSection_t fini_array;
-  ELFSection_t sdram_rodata;
-  ELFSection_t sdram_data;
-  ELFSection_t sdram_bss;
   ELFSection_t got;
 
   unsigned int fini_array_size;
 
-}__attribute__((aligned(16))) ELFExec_t;
+} ELFExec_t;
+
+typedef struct _ELFseg
+{
+  unsigned long needpage;
+  unsigned long entry;
+  Elf64_Ehdr elf_header;   
+  Elf64_Phdr elf_ph[9];
+
+  //页对齐
+  void * segment[9];
+}ELFseg;
 
 //use for searching each section
 typedef enum {

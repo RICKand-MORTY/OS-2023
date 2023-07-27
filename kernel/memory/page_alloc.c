@@ -116,7 +116,7 @@ unsigned long more_page_alloc(int count)
     {
         index = begin / (sizeof(u64) * 8); 
         offset = begin % (sizeof(u64) * 8); 
-        i = 1 << offset; 
+        i = 1UL << offset; 
         for(num = 0; num < count; num++) 
         {
             pages_bitmaps[index] |= i; 
@@ -170,7 +170,7 @@ int more_page_free(void *buf, unsigned int count)
     begin = ((unsigned long)buf - phy_start_address) / PAGE_SIZE; 
     index = begin / (sizeof(u64) * 8); 
     offset = begin % (sizeof(u64) * 8); 
-    i = 1 << offset; 
+    i = 1UL << offset; 
     
     //释放前先检查
     for(num = 0; num < count; num++) 
@@ -199,7 +199,7 @@ int more_page_free(void *buf, unsigned int count)
 
     index = begin / (sizeof(u64) * 8); 
     offset = begin % (sizeof(u64) * 8); 
-    i = 1 << offset; 
+    i = 1UL << offset; 
     
     for(num = 0; num < count; num++) 
     {

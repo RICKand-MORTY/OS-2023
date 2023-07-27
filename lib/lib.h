@@ -5,7 +5,7 @@
 typedef unsigned int size_t;
 
 int strlen(const char* s);
-void memset(void* addr, int val, unsigned int size);
+void memset(void* addr, int val, unsigned long size);
 void* memmove(void *dst, const void *src, unsigned int n);
 void *memcpy(void *dest, const void *src, size_t count);
 int strcmp(const char *s1, const char *s2);

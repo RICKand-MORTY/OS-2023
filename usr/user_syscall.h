@@ -28,4 +28,5 @@ long write(int fd, void *buf, unsigned int count);
 long lseek(int fd, long offset, int whereat);
 long exec(char *path, char *argv, char *envp);
 unsigned long printf(const char *fmt,...);
+char * getcwd(char *buf, unsigned int size);
 #endif
