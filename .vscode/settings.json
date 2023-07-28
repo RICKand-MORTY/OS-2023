@@ -46,6 +46,7 @@
         "elf.h": "c",
         "vfs.h": "c",
         "elf_loader.h": "c",
-        "error.h": "c"
+        "error.h": "c",
+        "times.h": "c"
     }
 }
