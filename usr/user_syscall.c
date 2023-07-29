@@ -126,3 +126,8 @@ char * getcwd(char *buf, unsigned int size)
 {
 	return SYSCALL_2(SYS_getcwd, buf, size);
 }
+
+long chdir(char * path)
+{
+	return SYSCALL_1(SYS_chdir, path);
+}

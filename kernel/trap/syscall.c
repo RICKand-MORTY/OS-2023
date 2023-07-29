@@ -356,6 +356,38 @@ long callback_sys_times(struct pt_regs *regs)
 
 }
 
+long callback_sys_chdir(struct pt_regs *regs)
+{
+	char * filename = (char *)regs->a0;
+	unsigned long pathlen = 0;
+	struct dir_entry * dentry = NULL;
+	char * path = more_page_alloc(1);
+	if(path == 1)
+	{
+		return -ENOMEM;
+	}
+	memset(path, 0, PAGE_SIZE);
+	pathlen = strlen(filename);
+	if(pathlen == 0 || pathlen >= PAGE_SIZE)
+	{
+		return -1;
+	}
+	strcpy(path, filename);
+	dentry = path_walk(path, 0);
+	more_page_free(path, 1);
+	if(dentry == NULL)
+	{
+		printk("No such file or directory!\n");
+		return -ENOENT;
+	}
+	if(dentry->dir_inode->attribute != FS_ATTR_DIR)
+	{
+		printk("%s not a directory!\n", filename);
+		return -ENOTDIR;
+	}
+	return 0;
+}
+
 #define __SYSCALL(nr, sym) [nr] = (syscall_fun)callback_##sym,
 
 const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
@@ -376,4 +408,5 @@ const syscall_fun syscall_table[TOTAL_SYSCALLS] = {
 	__SYSCALL(SYS_getcwd, sys_getcwd)
 	__SYSCALL(SYS_exit, sys_exit)
 	__SYSCALL(SYS_times, sys_times)
+	__SYSCALL(SYS_chdir, sys_chdir)
 };

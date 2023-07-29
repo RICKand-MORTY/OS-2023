@@ -12,9 +12,61 @@
 char argv[MAXARGNUM][MAXARGSIZE];
 int argc = 0;
 
-char *current_dir = "/";
+char *current_dir = NULL;
 
-int cd_command(){}
+int cd_command()
+{
+    char *path = NULL;
+    int len = 0;
+    int i = 0;
+
+    len = strlen(current_dir);
+    if(!strcmp(".", argv[1]))
+    {
+        return 0;
+    }
+    if(!strcmp("..", argv[1]))
+    {
+        if(!strcmp("/", current_dir))
+        {
+            return 0;
+        }
+        for(i = len - 1; i > 1; i--)
+        {
+            if(current_dir[i] == '/')
+            {
+                break;
+            }
+        }
+        current_dir[i] = '\0';
+        printf("switch to %s\n", current_dir);
+        return 0;
+    }
+
+    i = len + strlen(argv[1]);
+    path = malloc(1);
+    memset(path, 0, PAGE_SIZE);
+    strcpy(path, current_dir);
+    if(len > 1)
+    {
+        path[len] = '/';
+    }
+    strcat(path, argv[1]);
+    printf("cd %s\n", path);
+    i = chdir(path);
+    if(!i)
+    {
+        free(current_dir, 1);
+        current_dir = path;
+    }
+    else
+    {
+        free(path, 1);
+        printf("cd fail! argv:%s\n",argv[1]);
+        return -1;
+    }
+    return 0;
+}
 
 int ls_command()
 {
@@ -131,6 +183,16 @@ int shutdown_command()
     
 }
 
+int help_command()
+{
+    printf("help:\n");
+    printf("cd      [path]      \t\tchange work directory\n");
+    printf("exec    [filename]  \t\texecute file\n");
+    printf("cat     [filename]  \t\tread file content\n");
+    printf("pwd                 \t\tshow current directory\n");
+    printf("ls                  \t\tlist files and directories under the current directory\n");
+
+}
 
 /*command list*/
 struct	buildincmd shell_internal_cmd[] = 
@@ -145,7 +207,7 @@ struct	buildincmd shell_internal_cmd[] =
 	{"rmdir",rmdir_command},
 	{"exec",exec_command},
 	{"shutdown",shutdown_command},
-    {"exec",exec_command}
+    {"help",help_command}
 };
 
 static int run_command(int index)

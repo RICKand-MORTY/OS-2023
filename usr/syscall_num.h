@@ -19,4 +19,5 @@
 #define SYS_getcwd          17
 #define SYS_exit            93
 #define SYS_times           153
+#define SYS_chdir           49
 #endif
