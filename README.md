@@ -38,6 +38,8 @@ make debug:启动QEMU和GDB调试
 
 [VFS虚拟文件系统](./doc/VFS虚拟文件系统.md)
 
+[ELF加载器](./doc/ELF加载器.md)
+
 ### 成员分工
 
 曲为楷负责代码的开发，梁斯俊和贺畅负责bug的调试和文档的编写
