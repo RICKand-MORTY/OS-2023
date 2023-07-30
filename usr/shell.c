@@ -180,7 +180,7 @@ int exec_command()
 }
 int shutdown_command()
 {
-    
+
 }
 
 int help_command()
@@ -191,7 +191,6 @@ int help_command()
     printf("cat     [filename]  \t\tread file content\n");
     printf("pwd                 \t\tshow current directory\n");
     printf("ls                  \t\tlist files and directories under the current directory\n");
-
 }
 
 /*command list*/

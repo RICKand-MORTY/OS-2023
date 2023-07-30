@@ -73,6 +73,7 @@ int user_main()
 	current_dir = malloc(1);
 	*current_dir = '/';
 	*(current_dir + 1) = '\0';
+	printf("kernel init finish!\nHELLO WORLD!\n");
 	/*ret = clone(&user_thread_1,
 			(void *)(child_stack + PAGE_SIZE), 0, NULL);
 	if (ret < 0) {
