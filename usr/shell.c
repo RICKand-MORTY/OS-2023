@@ -77,6 +77,7 @@ int ls_command()
     unsigned int name_pos = 0;
     unsigned int name_num = 0; 
     char *str = malloc(1);
+    memset(str, 0, PAGE_SIZE);
     //print("ls_command opendir:%d\n",dir->fd);
     while(1)
     {
@@ -107,7 +108,7 @@ int pwd_command()
 	return 0;*/
     char * buf[30];
     void * str = getcwd(buf, 30);
-    print("aaa %s\n",str);
+    print("%s\n",str);
     return 0;
 }
 

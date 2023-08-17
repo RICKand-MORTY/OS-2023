@@ -69,7 +69,8 @@ int fopen(char *pathname, int flags)
 	int i;
 
 	//printk("sys_open!\n");
-	path = alloc_pgtable();
+	path = more_page_alloc(1);
+	memset(path, 0, PAGE_SIZE);
 	if(path == 1)
 	{
 		return -ENOMEM;
@@ -87,10 +88,10 @@ int fopen(char *pathname, int flags)
 	}
 	strcpy(path, pathname);
 	dentry = path_walk(path,0);
-	page_free_addr(path);
+	more_page_free(path, 1);
 	if(dentry != NULL)
 	{
-		printk("find %s!\n", pathname);
+		//printk("find %s!\n", pathname);
 	}
 	else
 	{
@@ -102,7 +103,8 @@ int fopen(char *pathname, int flags)
 	if(!(flags & O_DIRECTORY) && (dentry->dir_inode->attribute == FS_ATTR_DIR))
 		return -EISDIR;
 	
-	filp = alloc_pgtable();
+	filp = more_page_alloc(1);
+	memset(filp, 0, PAGE_SIZE);
 	if(filp == 1)
 	{
 		return -ENOMEM;
@@ -115,7 +117,7 @@ int fopen(char *pathname, int flags)
 		error = filp->f_ops->open(dentry->dir_inode,filp);
 	if(error != 1)
 	{
-		page_free_addr(filp);
+		more_page_free(filp, 1);
 		return -EFAULT;
 	}
 	if(filp->mode & O_TRUNC)
@@ -136,7 +138,7 @@ int fopen(char *pathname, int flags)
 		}
 	if(i == TASK_FILE_MAX)
 	{
-		page_free_addr(filp);
+		more_page_free(filp, 1);
 		return -EMFILE;
 	}
 	f[fd] = filp;
@@ -348,6 +350,7 @@ long callback_sys_exit(struct pt_regs *regs)
 {
 	int ec = regs->a0;
 	printk("ec: %d\n",ec);
+	get_current_task()->task_state = TASK_RUNNING;
 	return 0;
 }
 

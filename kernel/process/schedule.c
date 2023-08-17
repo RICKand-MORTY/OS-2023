@@ -113,8 +113,11 @@ void __schedule(void)
     irq_disable();
     if(prev->task_state != TASK_RUNNING)
     {
+        if(prev->next_task)
+        {
+            simple_sched_class.dequeue_task(rq, prev);
+        }
         //preemptive scheduling happened
-        simple_sched_class.dequeue_task(rq, prev);
     }
     next = simple_sched_class.pick_next_task(rq, prev);
     prev->need_schedule = 0;

@@ -560,7 +560,7 @@ struct dir_entry * FAT32_lookup(struct index_node * parent_inode,struct dir_entr
 
 next_cluster:
 	sector = fsbi->Data_firstsector + (cluster - 2) * fsbi->sector_per_cluster;
-	printk("lookup cluster:%#010x,sector:%#018lx\n",cluster,sector);
+	//printk("lookup cluster:%#010x,sector:%#018lx\n",cluster,sector);
 	
 	buf = read_more_sector(sector, fsbi->sector_per_cluster, &buflen);
 	if(buf == NULL)
